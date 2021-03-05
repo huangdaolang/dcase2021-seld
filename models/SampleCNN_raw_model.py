@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import models.Time_distributed
 
-# sampleCNN structure
+
 class SampleCNN(nn.Module):
     def __init__(self, params):
         super(SampleCNN, self).__init__()
