@@ -63,7 +63,7 @@ def get_params():
 
     parser.add_argument('--data_in', type=tuple, default=(7, 300, 64))
     parser.add_argument('--data_out', type=list, default=[(60, 14), (60, 56)])
-    parser.add_argument('--scheduler', type=str, default='plateau')
+    parser.add_argument('--scheduler', type=str, default='steplr')
 
     params = parser.parse_args()
     feature_label_resolution = int(params.label_hop_len_s // params.hop_len_s)

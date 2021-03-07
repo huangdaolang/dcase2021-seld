@@ -13,15 +13,18 @@ import os
 class Solver(object):
     def __init__(self, data_train, data_val, feat_cls, params, unique_name):
         self.params = params
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         if self.params.input == "mel":
             self.model = CRNN_mel_model.seld_model(data_in=params.data_in, data_out=params.data_out,
                                                    dropout_rate=params.dropout_rate,
                                                    nb_cnn2d_filt=params.nb_cnn2d_filt, f_pool_size=params.f_pool_size,
                                                    t_pool_size=params.t_pool_size, rnn_size=params.rnn_size,
-                                                   fnn_size=params.fnn_size, doa_objective=params.doa_objective)
+                                                   fnn_size=params.fnn_size, doa_objective=params.doa_objective).to(self.device)
             self.model = self.model.double()
         elif self.params.input == "raw":
-            self.model = SampleCNN_raw_model.SampleCNN(params)
+            self.model = SampleCNN_raw_model.SampleCNN(params).to(self.device)
             self.model = self.model.double()
 
         self.optimizer = torch.optim.Adam(self.model.parameters())
@@ -67,36 +70,41 @@ class Solver(object):
 
     def train(self):
         print("Model", self.model)
-
         # start training
         for epoch_cnt in range(self.nb_epoch):
             start = time.time()
 
             # train once per epoch
             self.model.train()
+            train_loss = 0
             for i, data in enumerate(self.train_dataloader):
-                feature = data['feature']
-                label = data['label']
+                feature = data['feature'].to(self.device)
+                sed_label = data['label'][0].to(self.device)
+                doa_label = data['label'][1].to(self.device)
 
                 sed_out, doa_out = self.model(feature)
-                loss = self.loss_weights[0] * self.criterion1(sed_out, label[0]) + \
-                       self.loss_weights[1] * self.criterion2(doa_out, label[1])
+                loss = self.loss_weights[0] * self.criterion1(sed_out, sed_label) + \
+                       self.loss_weights[1] * self.criterion2(doa_out, doa_label)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                if (i + 1) % 10 == 0:
-                    print("Epoch [%d/%d], Iter [%d/%d] train loss : %.4f" % (epoch_cnt + 1, self.nb_epoch, i + 1,
-                                                                             len(self.train_dataloader), loss.item()))
-                self.writer.add_scalar('Train Loss', loss.item(), epoch_cnt)
-                self.writer.flush()
-            sed_out, doa_out, label = self.validation(epoch_cnt)
+                # self.scheduler.step()
+                # if (i + 1) % 10 == 0:
+                #     print("Epoch [%d/%d], Iter [%d/%d] train loss : %.4f" % (epoch_cnt + 1, self.nb_epoch, i + 1,
+                #                                                              len(self.train_dataloader), loss.item()))
+                train_loss += loss.item()
+            print("Epoch [%d/%d], train loss : %.4f" % (epoch_cnt + 1, self.nb_epoch,
+                                                        train_loss/len(self.train_dataloader)))
+            self.writer.add_scalar('Train Loss', train_loss/len(self.train_dataloader), epoch_cnt)
+            self.writer.flush()
+            sed_out, doa_out, sed_label, doa_label = self.validation(epoch_cnt)
 
             sed_pred = evaluation_metrics.reshape_3Dto2D(sed_out) > 0.5
-            sed_pred = sed_pred.detach().numpy()
+            sed_pred = sed_pred.cpu().detach().numpy()
             doa_pred = evaluation_metrics.reshape_3Dto2D(
-                doa_out if self.params.doa_objective is 'mse' else doa_out[:, :, self.nb_classes:]).detach().numpy()
-            sed_gt = evaluation_metrics.reshape_3Dto2D(label[0]).detach().numpy()
-            doa_gt = evaluation_metrics.reshape_3Dto2D(label[1]).detach().numpy()[:, self.nb_classes:]
+                doa_out if self.params.doa_objective is 'mse' else doa_out[:, :, self.nb_classes:]).cpu().detach().numpy()
+            sed_gt = evaluation_metrics.reshape_3Dto2D(sed_label.cpu()).detach().numpy()
+            doa_gt = evaluation_metrics.reshape_3Dto2D(doa_label.cpu()).detach().numpy()[:, self.nb_classes:]
 
             # Calculate the DCASE 2019 metrics - Detection-only and Localization-only scores
             self.sed_metric[epoch_cnt, :] = evaluation_metrics.compute_sed_scores(sed_pred, sed_gt, 10)
@@ -189,17 +197,21 @@ class Solver(object):
         self.model.eval()
         sed_out = None
         doa_out = None
-        label = None
+        sed_label = None
+        doa_label = None
+        val_loss = 0
         for i, data in enumerate(self.val_dataloader):
-            feature = data['feature']
-            label = data['label']
+            feature = data['feature'].to(self.device)
+            sed_label = data['label'][0].to(self.device)
+            doa_label = data['label'][1].to(self.device)
 
             sed_out, doa_out = self.model(feature)
-            loss = self.loss_weights[0] * self.criterion1(sed_out, label[0]) + \
-                   self.loss_weights[1] * self.criterion2(doa_out, label[1])
-            if (i + 1) % 10 == 0:
-                print("Epoch [%d/%d], Iter [%d/%d] val loss : %.4f" % (epoch_cnt + 1, self.nb_epoch, i + 1,
-                                                                       len(self.val_dataloader), loss.item()))
-            self.writer.add_scalar('Validation Loss', loss.item(), epoch_cnt)
-            self.writer.flush()
-        return sed_out, doa_out, label
+            loss = self.loss_weights[0] * self.criterion1(sed_out, sed_label) + \
+                   self.loss_weights[1] * self.criterion2(doa_out, doa_label)
+            val_loss += loss.item()
+
+        print("Epoch [%d/%d], val loss : %.4f" % (epoch_cnt + 1, self.nb_epoch,
+                                                  val_loss / len(self.val_dataloader)))
+        self.writer.add_scalar('Validation Loss', val_loss / len(self.val_dataloader), epoch_cnt)
+        self.writer.flush()
+        return sed_out, doa_out, sed_label, doa_label

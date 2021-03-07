@@ -5,7 +5,7 @@ import os
 import feature_class
 import random
 import torch
-import torchaudio
+
 
 # dataset should be 4000 x 7 x 300 x 64 (mel input), label should be 400 x 2 x 60 x 14 (another 42)
 class Tau_nigens(Dataset):
@@ -86,7 +86,7 @@ class Tau_nigens(Dataset):
                                  self._feature_seq_len, self._nb_mel_bins, self._nb_ch))
         data = np.transpose(data, (0, 3, 1, 2))
         print("input shape", data.shape)
-        return data
+        return torch.tensor(data, dtype=torch.double)
 
     def get_all_data_raw(self):
         print("start to get fetch audio data")
@@ -114,13 +114,14 @@ class Tau_nigens(Dataset):
         label = np.array(label)
         print("Label shape", label.shape)
         label = [
-            label[:, :, :self._nb_classes],  # SED labels
-            label  # SED + DOA labels
+            torch.tensor(label[:, :, :self._nb_classes]),  # SED labels
+            torch.tensor(label)  # SED + DOA labels
         ]
+
         return label
 
     def __getitem__(self, index):
-        entry = {"feature": self.data[index], "label": [self.label[0][index], self.label[1][index]]}
+        entry = {"feature": self.data[index], "label": [self.label[0][index], self.label[1][index]]} # TODO change label format
         return entry
 
     def __len__(self):

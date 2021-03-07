@@ -1,6 +1,6 @@
 # Extracts the features, labels, and normalizes the development and evaluation split features.
 
-import feature_class
+import cls_feature_class
 import parameter
 
 process_str = 'dev, eval'   # 'dev' or 'eval' will extract features for the respective set accordingly
@@ -11,7 +11,7 @@ params = parameter.get_params()
 
 if 'dev' in process_str:
     # -------------- Extract features and labels for development set -----------------------------
-    dev_feat_cls = feature_class.FeatureClass(params, is_eval=False)
+    dev_feat_cls = cls_feature_class.FeatureClass(params, is_eval=False)
 
     # Extract features and normalize them
     dev_feat_cls.extract_all_feature()
@@ -23,7 +23,7 @@ if 'dev' in process_str:
 
 if 'eval' in process_str:
     # -----------------------------Extract ONLY features for evaluation set-----------------------------
-    eval_feat_cls = feature_class.FeatureClass(params, is_eval=True)
+    eval_feat_cls = cls_feature_class.FeatureClass(params, is_eval=True)
 
     # Extract features and normalize them
     eval_feat_cls.extract_all_feature()
