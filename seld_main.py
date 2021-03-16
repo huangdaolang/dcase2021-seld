@@ -55,6 +55,11 @@ def main():
             params=params, split=val_splits[split_cnt]
         )
 
+        print('Loading test dataset:')
+        data_test = data_loader.Tau_nigens(
+            params=params, split=test_splits[split_cnt]
+        )
+
         print(
             'MODEL:\n\tdropout_rate: {}\n\tCNN: nb_cnn_filt: {}, f_pool_size{}, t_pool_size{}\n\trnn_size: {}, fnn_size: {}\n\tdoa_objective: {}\n'.format(
                 params.dropout_rate, params.nb_cnn2d_filt, params.f_pool_size, params.t_pool_size,
@@ -64,7 +69,7 @@ def main():
         print('Using loss weights : {}'.format(params.loss_weights))
 
         # create solver and run
-        my_solver = solver.Solver(data_train, data_val, feat_cls, params, unique_name)
+        my_solver = solver.Solver(data_train, data_val, data_test, feat_cls, params, unique_name)
         my_solver.train()
 
 

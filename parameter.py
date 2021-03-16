@@ -53,7 +53,7 @@ def get_params():
     parser.add_argument('--loss_weights', type=list, default=[1., 1000.],
                         help='[sed, doa] weight for scaling the DNN outputs')
 
-    parser.add_argument('--nb_epochs', type=int, default=20)
+    parser.add_argument('--nb_epochs', type=int, default=50)
     parser.add_argument('--epochs_per_fit', type=int, default=5,
                         help='Number of epochs per fit')
     parser.add_argument('--doa_objective', type=str, default='masked_mse',

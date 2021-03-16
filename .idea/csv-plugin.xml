@@ -59,6 +59,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/solver.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/utils/plot_spectrogram.py">
           <value>
             <Attribute>

@@ -1,2 +1,2 @@
-cd Documents/Reseach\ and\ Project/SELD-DCASE2021
+cd Documents/Research\ and\ Project/SELD-DCASE2021
 tensorboard --logdir=log/
