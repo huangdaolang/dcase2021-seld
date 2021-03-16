@@ -53,7 +53,7 @@ class SampleCNN(nn.Module):
             nn.MaxPool1d(3, stride=3))
 
         self.rnn1 = nn.Sequential(
-            nn.GRU(input_size=65, bidirectional=True, dropout=self.params.dropout_rate, hidden_size=int(self.params.rnn_size[0] / 2),
+            nn.GRU(input_size=60, bidirectional=True, dropout=self.params.dropout_rate, hidden_size=int(self.params.rnn_size[0] / 2),
                    batch_first=True)
         )
 
@@ -76,19 +76,6 @@ class SampleCNN(nn.Module):
             nn.Sigmoid()
         )
 
-        self.doa = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(128, self.params.fnn_size[0]), batch_first=True),
-            nn.Dropout(self.params.dropout_rate),
-            models.Time_distributed.TimeDistributed(nn.Linear(self.params.fnn_size[0], self.params.data_out[1][-1]), batch_first=True),
-            nn.Tanh()
-        )
-
-        self.sed = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(128, self.params.fnn_size[0]), batch_first=True),
-            nn.Dropout(self.params.dropout_rate),
-            models.Time_distributed.TimeDistributed(nn.Linear(self.params.fnn_size[0], self.params.data_out[0][-1]), batch_first=True),
-            nn.Sigmoid()
-        )
 
     def forward(self, x):
         # input x : 23 x 59049 x 1

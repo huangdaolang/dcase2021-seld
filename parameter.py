@@ -17,6 +17,8 @@ def get_params():
 
     parser.add_argument('--input', type=str, default='mel',
                         help='determine which input format to use: mel or raw audio')
+    parser.add_argument('--model', type=str, default='resnet',
+                        help='resnet crnn or samplecnn')
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2021/',
                         help='Base folder containing the foa/mic and metadata folders')

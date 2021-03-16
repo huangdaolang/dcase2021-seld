@@ -45,6 +45,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/models/CRNN_mel.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/models/ResNet_mel.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/parameter.py">
           <value>
             <Attribute>

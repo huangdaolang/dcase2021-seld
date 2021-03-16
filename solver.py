@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from models import CRNN_mel_model, SampleCNN_raw_model
+from models import CRNN_mel, SampleCNN_raw, ResNet_mel
 import torch.nn as nn
 import numpy as np
 import time
@@ -17,15 +17,18 @@ class Solver(object):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if self.params.input == "mel":
-            self.model = CRNN_mel_model.seld_model(data_in=params.data_in, data_out=params.data_out,
-                                                   dropout_rate=params.dropout_rate,
-                                                   nb_cnn2d_filt=params.nb_cnn2d_filt, f_pool_size=params.f_pool_size,
-                                                   t_pool_size=params.t_pool_size, rnn_size=params.rnn_size,
-                                                   fnn_size=params.fnn_size, doa_objective=params.doa_objective).to(
-                self.device)
-            self.model = self.model.double()
+            if self.params.model == "crnn":
+                self.model = CRNN_mel.CRNN(data_in=params.data_in, data_out=params.data_out,
+                                           dropout_rate=params.dropout_rate,
+                                           nb_cnn2d_filt=params.nb_cnn2d_filt, f_pool_size=params.f_pool_size,
+                                           t_pool_size=params.t_pool_size, rnn_size=params.rnn_size,
+                                           fnn_size=params.fnn_size, doa_objective=params.doa_objective).to(self.device)
+                self.model = self.model.double()
+            elif self.params.model == "resnet":
+                self.model = ResNet_mel.get_resnet(data_in=params.data_in, data_out=params.data_out).to(self.device)
+                self.model = self.model.double()
         elif self.params.input == "raw":
-            self.model = SampleCNN_raw_model.SampleCNN(params).to(self.device)
+            self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
             self.model = self.model.double()
 
         self.optimizer = torch.optim.Adam(self.model.parameters())

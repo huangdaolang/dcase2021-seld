@@ -3,10 +3,10 @@ import torch.nn as nn
 import models.Time_distributed
 
 
-class seld_model(nn.Module):
+class CRNN(nn.Module):
     def __init__(self, data_in, data_out, dropout_rate, nb_cnn2d_filt, f_pool_size, t_pool_size,
               rnn_size, fnn_size, doa_objective):
-        super(seld_model, self).__init__()
+        super(CRNN, self).__init__()
         self.data_in = data_in
         self.data_out = data_out
 
@@ -59,7 +59,6 @@ class seld_model(nn.Module):
         )
 
     def forward(self, x):
-        # x = x.view(self.data_in[-3], self.data_in[-2], self.data_in[-1])
         out = self.conv1(x)
         # print(out.shape)
         out = self.conv2(out)
@@ -67,6 +66,7 @@ class seld_model(nn.Module):
         out = self.conv3(out)
         # print(out.shape)
         out = out.permute(0, 2, 1, 3)
+        # print(out.shape)
         out = torch.reshape(out, (out.shape[0], self.data_out[0][-2], -1))
         # print(out.shape)
         out, h = self.rnn1(out)
