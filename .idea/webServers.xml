@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="4aa2d53c-a99b-408b-bb88-5f7a6af43d1a" name="triton.aalto.fi">
+        <fileTransfer rootFolder="/scratch/work/huangd5/" accessType="SFTP" host="triton.aalto.fi" port="22" sshConfigId="c400abfe-c7f9-44d9-8d67-a37aa3837fd7" sshConfig="huangd5@triton.aalto.fi:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

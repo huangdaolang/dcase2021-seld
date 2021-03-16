@@ -49,7 +49,6 @@ class Solver(object):
 
         self.criterion1 = nn.BCELoss()
         self.criterion2 = nn.MSELoss()  # TODO add masked_mse
-
         self.best_seld_metric = 99999
         self.best_epoch = -1
         self.patience_cnt = 0

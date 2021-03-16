@@ -21,11 +21,11 @@ if 'dev' in process_str:
     dev_feat_cls.extract_all_labels()
 
 
-if 'eval' in process_str:
-    # -----------------------------Extract ONLY features for evaluation set-----------------------------
-    eval_feat_cls = cls_feature_class.FeatureClass(params, is_eval=True)
-
-    # Extract features and normalize them
-    eval_feat_cls.extract_all_feature()
-    eval_feat_cls.preprocess_features()
+# if 'eval' in process_str:
+#     # -----------------------------Extract ONLY features for evaluation set-----------------------------
+#     eval_feat_cls = cls_feature_class.FeatureClass(params, is_eval=True)
+#
+#     # Extract features and normalize them
+#     eval_feat_cls.extract_all_feature()
+#     eval_feat_cls.preprocess_features()
 

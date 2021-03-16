@@ -17,9 +17,9 @@ def get_params():
     parser.add_argument('--input', type=str, default='mel',
                         help='determine which input format to use: mel or raw audio')
 
-    parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD/',
+    parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2021/',
                         help='Base folder containing the foa/mic and metadata folders')
-    parser.add_argument('--feat_label_dir', type=str, default='../Datasets/SELD/feat_label_new/',
+    parser.add_argument('--feat_label_dir', type=str, default='../Datasets/SELD2021/feat_label/',
                         help='Directory to dump extracted features and labels')
     parser.add_argument('--model_dir', type=str, default='trained_model/',
                         help='Dumps the trained models and training curves in this folder')
