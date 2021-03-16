@@ -105,12 +105,12 @@ class Solver(object):
             sed_gt = evaluation_metrics.reshape_3Dto2D(sed_label.cpu()).detach().numpy()
             doa_gt = evaluation_metrics.reshape_3Dto2D(doa_label.cpu()).detach().numpy()[:, self.nb_classes:]
 
-            # Calculate the DCASE 2019 metrics - Detection-only and Localization-only scores
-            self.sed_metric[epoch_cnt, :] = evaluation_metrics.compute_sed_scores(sed_pred, sed_gt, 10)
-            self.doa_metric[epoch_cnt, :] = evaluation_metrics.compute_doa_scores_regr_xyz(doa_pred, doa_gt,
-                                                                                           sed_pred, sed_gt)
-            self.seld_metric[epoch_cnt] = evaluation_metrics.early_stopping_metric(
-                self.sed_metric[epoch_cnt, :], self.doa_metric[epoch_cnt, :])
+            # # Calculate the DCASE 2019 metrics - Detection-only and Localization-only scores
+            # self.sed_metric[epoch_cnt, :] = evaluation_metrics.compute_sed_scores(sed_pred, sed_gt, 10)
+            # self.doa_metric[epoch_cnt, :] = evaluation_metrics.compute_doa_scores_regr_xyz(doa_pred, doa_gt,
+            #                                                                                sed_pred, sed_gt)
+            # self.seld_metric[epoch_cnt] = evaluation_metrics.early_stopping_metric(
+            #     self.sed_metric[epoch_cnt, :], self.doa_metric[epoch_cnt, :])
 
             # Calculate the DCASE 2020 metrics - Location-aware detection and Class-aware localization scores
             cls_new_metric = SELD_evaluation_metrics.SELDMetrics(nb_classes=self.nb_classes,
@@ -142,12 +142,9 @@ class Solver(object):
 
             print(
                 'epoch_cnt: {}, time: {:0.2f}s, tr_loss: {:0.2f}, '
-                '\n\t\t DCASE2019 SCORES: ER: {:0.2f}, F: {:0.1f}, DE: {:0.1f}, FR:{:0.1f}, seld_score: {:0.2f}, '
                 '\n\t\t DCASE2020 SCORES: ER: {:0.2f}, F: {:0.1f}, DE: {:0.1f}, DE_F:{:0.1f}, seld_score (early stopping score): {:0.2f}, '
                 'best_seld_score: {:0.2f}, best_epoch : {}\n'.format(
                     epoch_cnt, time.time() - start, self.tr_loss[epoch_cnt],
-                    self.sed_metric[epoch_cnt, 0], self.sed_metric[epoch_cnt, 1] * 100,
-                    self.doa_metric[epoch_cnt, 0], self.doa_metric[epoch_cnt, 1] * 100, self.seld_metric[epoch_cnt],
                     self.new_metric[epoch_cnt, 0], self.new_metric[epoch_cnt, 1] * 100,
                     self.new_metric[epoch_cnt, 2], self.new_metric[epoch_cnt, 3] * 100,
                     self.new_seld_metric[epoch_cnt], self.best_seld_metric, self.best_epoch
@@ -182,15 +179,6 @@ class Solver(object):
                 self.new_metric[
                     self.best_epoch, 1] * 100))
 
-        print('\n\tDCASE2019 scores')
-        print('\tLocalization-only scores: DOA_error: {:0.1f}, Frame recall: {:0.1f}'.format(
-            self.doa_metric[self.best_epoch, 0],
-            self.doa_metric[
-                self.best_epoch, 1] * 100))
-        print('\tDetection-only scores: Error rate: {:0.2f}, F-score: {:0.1f}\n'.format(
-            self.sed_metric[self.best_epoch, 0],
-            self.sed_metric[
-                self.best_epoch, 1] * 100))
 
     def validation(self, epoch_cnt):
         self.model.eval()

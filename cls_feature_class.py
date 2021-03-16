@@ -4,9 +4,7 @@ import os
 import numpy as np
 import scipy.io.wavfile as wav
 from sklearn import preprocessing
-# from sklearn.externals import joblib
 import joblib
-from IPython import embed
 import matplotlib.pyplot as plot
 import librosa
 import math
@@ -69,14 +67,16 @@ class FeatureClass:
         self._max_feat_frames = int(np.ceil(self._audio_max_len_samples / float(self._hop_len)))
         self._max_label_frames = int(np.ceil(self._audio_max_len_samples / float(self._label_hop_len)))
 
-    def _load_audio(self, audio_path):
+    def load_audio(self, audio_path):
         fs, audio = wav.read(audio_path)
         audio = audio[:, :self._nb_channels] / 32768.0 + self._eps
+
         if audio.shape[0] < self._audio_max_len_samples:
             zero_pad = np.random.rand(self._audio_max_len_samples - audio.shape[0], audio.shape[1])*self._eps
             audio = np.vstack((audio, zero_pad))
         elif audio.shape[0] > self._audio_max_len_samples:
             audio = audio[:self._audio_max_len_samples, :]
+
         return audio, fs
 
     # INPUT FEATURES
@@ -84,17 +84,19 @@ class FeatureClass:
     def _next_greater_power_of_2(x):
         return 2 ** (x - 1).bit_length()
 
-    def _spectrogram(self, audio_input):
+    def spectrogram(self, audio_input):
         _nb_ch = audio_input.shape[1]
         nb_bins = self._nfft // 2
         spectra = np.zeros((self._max_feat_frames, nb_bins + 1, _nb_ch), dtype=complex)
+
         for ch_cnt in range(_nb_ch):
             stft_ch = librosa.core.stft(np.asfortranarray(audio_input[:, ch_cnt]), n_fft=self._nfft, hop_length=self._hop_len,
                                         win_length=self._win_len, window='hann')
             spectra[:, :, ch_cnt] = stft_ch[:, :self._max_feat_frames].T
+
         return spectra
 
-    def _get_mel_spectrogram(self, linear_spectra):
+    def get_mel_spectrogram(self, linear_spectra):
         mel_feat = np.zeros((linear_spectra.shape[0], self._nb_mel_bins, linear_spectra.shape[-1]))
         for ch_cnt in range(linear_spectra.shape[-1]):
             mag_spectra = np.abs(linear_spectra[:, :, ch_cnt])**2
@@ -136,8 +138,8 @@ class FeatureClass:
         return gcc_feat.reshape((linear_spectra.shape[0], self._nb_mel_bins*gcc_channels))
 
     def _get_spectrogram_for_file(self, audio_filename):
-        audio_in, fs = self._load_audio(os.path.join(self._aud_dir, audio_filename))
-        audio_spec = self._spectrogram(audio_in)
+        audio_in, fs = self.load_audio(os.path.join(self._aud_dir, audio_filename))
+        audio_spec = self.spectrogram(audio_in)
         return audio_spec
 
     # OUTPUT LABELS
@@ -183,7 +185,7 @@ class FeatureClass:
             spect = self._get_spectrogram_for_file(wav_filename)
 
             #extract mel
-            mel_spect = self._get_mel_spectrogram(spect)
+            mel_spect = self.get_mel_spectrogram(spect)
 
             feat = None
             if self._dataset is 'foa':

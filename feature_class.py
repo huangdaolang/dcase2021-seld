@@ -2,18 +2,15 @@
 
 import os
 import numpy as np
-import scipy.io.wavfile as wav
 from sklearn import preprocessing
-# from sklearn.externals import joblib
 import joblib
-from IPython import embed
 import matplotlib.pyplot as plot
 import librosa
 import math
 import torchaudio
 import torch
 plot.switch_backend('agg')
-
+torchaudio.set_audio_backend('sox_io')
 
 def nCr(n, r):
     return math.factorial(n) // math.factorial(r) // math.factorial(n-r)
@@ -79,6 +76,7 @@ class FeatureClass:
             audio = torch.vstack((audio, zero_pad))
         elif audio.shape[0] > self._audio_max_len_samples:
             audio = audio[:self._audio_max_len_samples, :]
+
         return audio, fs
 
     # INPUT FEATURES
@@ -86,18 +84,21 @@ class FeatureClass:
     def _next_greater_power_of_2(x):
         return 2 ** (x - 1).bit_length()
 
-    def _spectrogram(self, audio_input):
+    def spectrogram(self, audio_input):
         _nb_ch = audio_input.shape[1]
         nb_bins = self._nfft // 2
         spectra = np.zeros((self._max_feat_frames, nb_bins + 1, _nb_ch), dtype=complex)
         for ch_cnt in range(_nb_ch):
             stft_ch = torchaudio.transforms.Spectrogram(n_fft=self._nfft,
                                                         hop_length=self._hop_len,
-                                                        win_length=self._win_len)(audio_input[:, ch_cnt])
+                                                        win_length=self._win_len,
+                                                        power=1)(audio_input[:, ch_cnt])
             spectra[:, :, ch_cnt] = stft_ch[:, :self._max_feat_frames].T
+
         return spectra
 
-    def _get_mel_spectrogram(self, linear_spectra):
+    # currently I use this function to transfer from spec to mel spec
+    def get_mel_spectrogram(self, linear_spectra):
         mel_feat = np.zeros((linear_spectra.shape[0], self._nb_mel_bins, linear_spectra.shape[-1]))
         for ch_cnt in range(linear_spectra.shape[-1]):
             mag_spectra = np.abs(linear_spectra[:, :, ch_cnt])**2
@@ -107,8 +108,8 @@ class FeatureClass:
         mel_feat = mel_feat.reshape((linear_spectra.shape[0], self._nb_mel_bins * linear_spectra.shape[-1]))
         return mel_feat
 
-    # rewrite this function using torch
-    def _mel_spectrogram_torch(self, audio_input):
+    # rewrite this function using torch, has some problems right now
+    def mel_spectrogram_torch(self, audio_input):
         _nb_ch = audio_input.shape[1]
         nb_bins = self._nfft // 2
         mel_feat = np.zeros((self._max_feat_frames, self._nb_mel_bins, _nb_ch))
@@ -118,6 +119,17 @@ class FeatureClass:
                                                             n_mels=self._nb_mel_bins)(audio_input[:, ch_cnt])[:, :self._max_feat_frames].T
             mel_feat[:, :, ch_cnt] = mel_spec
         mel_feat = mel_feat.reshape((self._max_feat_frames, self._nb_mel_bins * _nb_ch))
+        # linear_spectra = torch.from_numpy(linear_spectra)
+        #
+        # print(type(linear_spectra[0,0,0]))
+        # _nb_ch = linear_spectra.shape[-1]
+        # mel_feat = np.zeros((self._max_feat_frames, self._nb_mel_bins, _nb_ch))
+        # for ch_cnt in range(_nb_ch):
+        #     mel_spec = torchaudio.transforms.MelScale(n_mels=self._nb_mel_bins,
+        #                                               sample_rate=self._fs)(linear_spectra[:, :, ch_cnt])
+        #     print(mel_spec.shape)
+        #     mel_feat[:, :, ch_cnt] = mel_spec
+        # print(mel_feat.shape)
         return mel_feat
 
     def _get_foa_intensity_vectors(self, linear_spectra):
@@ -153,12 +165,12 @@ class FeatureClass:
 
     def _get_spectrogram_for_file(self, audio_filename):
         audio_in, fs = self.load_audio(os.path.join(self._aud_dir, audio_filename))
-        audio_spec = self._spectrogram(audio_in)
+        audio_spec = self.spectrogram(audio_in)
         return audio_spec
 
     def _get_mel_for_file(self, audio_filename):
         audio_in, fs = self.load_audio(os.path.join(self._aud_dir, audio_filename))
-        audio_spec = self._mel_spectrogram_torch(audio_in)
+        audio_spec = self.mel_spectrogram_torch(audio_in)
         return audio_spec
 
     # OUTPUT LABELS
@@ -204,8 +216,8 @@ class FeatureClass:
             spect = self._get_spectrogram_for_file(wav_filename)
 
             #extract mel
-            mel_spect = self._get_mel_for_file(wav_filename)
-            # mel_spect = self._get_mel_spectrogram(spect)  # This is the original mel spectrogram using librosa
+            # mel_spect = self._get_mel_for_file(wav_filename)
+            mel_spect = self.get_mel_spectrogram(spect)  # This is the original mel spectrogram using librosa
 
             feat = None
             if self._dataset is 'foa':

@@ -17,6 +17,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/cls_feature_class.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/dataset/metadata_dev/fold1_room1_mix004_ov1.csv">
           <value>
             <Attribute>
@@ -46,6 +53,13 @@
           </value>
         </entry>
         <entry key="/seld_torch.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/utils/plot_spectrogram.py">
           <value>
             <Attribute>
               <option name="separator" value="," />
