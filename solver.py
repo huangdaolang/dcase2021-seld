@@ -16,6 +16,7 @@ class Solver(object):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+        # model selection part
         if self.params.input == "mel":
             if self.params.model == "crnn":
                 self.model = CRNN_mel.CRNN(data_in=params.data_in, data_out=params.data_out,
@@ -31,9 +32,11 @@ class Solver(object):
             self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
             self.model = self.model.double()
 
-        self.optimizer = torch.optim.Adam(self.model.parameters())
+        # optimizer selection part
+        if self.params.optimizer == 'adam':
+            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.params.lr, weight_decay=0.0001)
 
-        # scheduler
+        # scheduler selection part
         if self.params.scheduler == 'plateau':
             self.scheduler = ReduceLROnPlateau(self.optimizer, factor=0.2, patience=2, verbose=True)
         elif self.params.scheduler == 'cyclic':
@@ -96,9 +99,10 @@ class Solver(object):
                 # self.scheduler.step()
 
                 train_loss += loss.item()
-            print("Epoch [%d/%d], train loss : %.4f" % (epoch_cnt + 1, self.nb_epoch,
-                                                        train_loss / len(self.train_dataloader)))
-            self.writer.add_scalar('Train Loss', train_loss / len(self.train_dataloader), epoch_cnt)
+            self.tr_loss[epoch_cnt] = train_loss / len(self.train_dataloader)
+            print("Epoch [%d/%d], train loss : %.4f" % (epoch_cnt + 1, self.nb_epoch, self.tr_loss[epoch_cnt]))
+
+            self.writer.add_scalar('Train Loss', self.tr_loss[epoch_cnt], epoch_cnt)
             self.writer.flush()
             sed_out, doa_out, sed_label, doa_label = self.validation(epoch_cnt)
 

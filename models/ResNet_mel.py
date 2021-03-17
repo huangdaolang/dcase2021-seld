@@ -63,12 +63,12 @@ class ResNet(nn.Module):
         self.conv6 = nn.Conv2d(512, 64, kernel_size=3, padding=1, bias=False)
 
         self.rnn1 = nn.Sequential(
-            nn.GRU(input_size=304, bidirectional=True, dropout=0.5, hidden_size=152,
+            nn.GRU(input_size=128, bidirectional=True, dropout=0.5, hidden_size=64,
                    batch_first=True)
         )
 
         self.rnn2 = nn.Sequential(
-            nn.GRU(input_size=304, bidirectional=True, dropout=0.5, hidden_size=152,
+            nn.GRU(input_size=128, bidirectional=True, dropout=0.5, hidden_size=64,
                    batch_first=True)
         )
 

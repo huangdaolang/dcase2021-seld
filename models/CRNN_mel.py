@@ -40,7 +40,7 @@ class CRNN(nn.Module):
         )
 
         self.rnn2 = nn.Sequential(
-            nn.GRU(input_size=rnn_size[1], bidirectional=True, dropout=dropout_rate, hidden_size=int(rnn_size[1]/2),
+            nn.GRU(input_size=rnn_size[1], bidirectional=True, hidden_size=int(rnn_size[1]/2),
                    batch_first=True)
         )
 
@@ -60,9 +60,9 @@ class CRNN(nn.Module):
 
     def forward(self, x):
         out = self.conv1(x)
-        # print(out.shape)
+
         out = self.conv2(out)
-        # print(out.shape)
+
         out = self.conv3(out)
         # print(out.shape)
         out = out.permute(0, 2, 1, 3)

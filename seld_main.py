@@ -39,7 +39,7 @@ def main():
         # Unique name for the run
         feature_class.create_folder(params.model_dir)
         unique_name = '{}_{}_{}_split{}'.format(
-            datetime.datetime.now().strftime("%Y-%m-%d %H"), params.dataset, params.mode, split
+            params.model, params.dataset, params.mode, split
         )
 
         print("unique_name: {}\n".format(unique_name))

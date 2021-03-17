@@ -17,7 +17,7 @@ def get_params():
 
     parser.add_argument('--input', type=str, default='mel',
                         help='determine which input format to use: mel or raw audio')
-    parser.add_argument('--model', type=str, default='resnet',
+    parser.add_argument('--model', type=str, default='crnn',
                         help='resnet crnn or samplecnn')
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2021/',
@@ -55,9 +55,13 @@ def get_params():
     parser.add_argument('--loss_weights', type=list, default=[1., 1000.],
                         help='[sed, doa] weight for scaling the DNN outputs')
 
-    parser.add_argument('--nb_epochs', type=int, default=50)
+    parser.add_argument('--nb_epochs', type=int, default=40)
+    parser.add_argument('--optimizer', type=str, default='adam')
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--scheduler', type=str, default='steplr')
     parser.add_argument('--epochs_per_fit', type=int, default=5,
                         help='Number of epochs per fit')
+
     parser.add_argument('--doa_objective', type=str, default='masked_mse',
                         help='supports: mse, masked_mse. mse- original seld approach; masked_mse - dcase 2020 approach')
 
@@ -66,7 +70,7 @@ def get_params():
 
     parser.add_argument('--data_in', type=tuple, default=(7, 300, 64))
     parser.add_argument('--data_out', type=list, default=[(60, 14), (60, 56)])
-    parser.add_argument('--scheduler', type=str, default='steplr')
+
 
     params = parser.parse_args()
     feature_label_resolution = int(params.label_hop_len_s // params.hop_len_s)
