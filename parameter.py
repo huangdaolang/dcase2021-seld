@@ -42,7 +42,7 @@ def get_params():
     parser.add_argument('--label_sequence_length', type=int, default=60,
                         help='Feature sequence length')
     parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--dropout_rate', type=float, default=0,
+    parser.add_argument('--dropout_rate', type=float, default=0.3,
                         help='Dropout rate, constant for all layers')
     parser.add_argument('--nb_cnn2d_filt', type=int, default=64,
                         help='Number of CNN nodes, constant for each layer')
@@ -52,7 +52,7 @@ def get_params():
                         help='RNN contents, length of list = number of layers, list value = number of nodes')
     parser.add_argument('--fnn_size', type=list, default=[128],
                         help='FNN contents, length of list = number of layers, list value = number of nodes')
-    parser.add_argument('--loss_weights', type=list, default=[1., 1000.],
+    parser.add_argument('--loss_weights', type=list, default=[1., 10.],
                         help='[sed, doa] weight for scaling the DNN outputs')
 
     parser.add_argument('--nb_epochs', type=int, default=40)
@@ -69,8 +69,7 @@ def get_params():
     parser.add_argument('--lad_doa_thresh', type=int, default=20)
 
     parser.add_argument('--data_in', type=tuple, default=(7, 300, 64))
-    parser.add_argument('--data_out', type=list, default=[(60, 14), (60, 56)])
-
+    parser.add_argument('--data_out', type=list, default=[(60, 14), (60, 42)])
 
     params = parser.parse_args()
     feature_label_resolution = int(params.label_hop_len_s // params.hop_len_s)

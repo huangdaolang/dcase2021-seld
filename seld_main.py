@@ -28,6 +28,9 @@ def main():
         test_splits = [6]
         val_splits = [5]
         train_splits = [[1, 2, 3, 4]]
+        # test_splits = [1]
+        # val_splits = [2]
+        # train_splits = [[3, 4, 5, 6]]
 
     elif params.mode == 'eval':
         test_splits = [[7, 8]]
@@ -38,8 +41,8 @@ def main():
 
         # Unique name for the run
         feature_class.create_folder(params.model_dir)
-        unique_name = '{}_{}_{}_split{}'.format(
-            params.model, params.dataset, params.mode, split
+        unique_name = '{}_{}_{}_{}'.format(
+            datetime.datetime.today().strftime('%m%d%H%M'), params.model, params.dataset, params.mode
         )
 
         print("unique_name: {}\n".format(unique_name))

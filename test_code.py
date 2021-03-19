@@ -126,13 +126,15 @@ class FeatureClass:
 
 
 if __name__ == "__main__":
-    params = parameter.get_params()
-    feature = cls_feature_class.FeatureClass(params)
-    audio, fs = feature._load_audio('../Datasets/SELD/foa_dev/fold1_room1_mix001_ov1.wav')
-    stft = np.abs(np.squeeze(feature._spectrogram(audio[:, :1])))
-    stft = librosa.amplitude_to_db(stft, ref=np.max)
-    librosa.display.specshow(stft.T, sr=fs, x_axis='s', y_axis='linear')
-    plot.show()
+    # params = parameter.get_params()
+    # feature = cls_feature_class.FeatureClass(params)
+    # audio, fs = feature._load_audio('../Datasets/SELD/foa_dev/fold1_room1_mix001_ov1.wav')
+    # stft = np.abs(np.squeeze(feature._spectrogram(audio[:, :1])))
+    # stft = librosa.amplitude_to_db(stft, ref=np.max)
+    # librosa.display.specshow(stft.T, sr=fs, x_axis='s', y_axis='linear')
+    # plot.show()
+
+
     # waveform, sample_rate = feature.load_audio('dataset/foa_dev/fold1_room1_mix001_ov1.wav')
     #
     # print("waveform", waveform.shape)
@@ -141,3 +143,6 @@ if __name__ == "__main__":
     # a = feature.mel_spectrogram_torch(waveform)
     # # print(a)
     # print(np.load('dataset/feat_label/foa_dev/fold1_room1_mix001_ov1.npy'))
+
+    a = np.load("../Datasets/SELD2021/feat_label/foa_dev_label/fold1_room1_mix001.npy")
+    print(a[200, :])

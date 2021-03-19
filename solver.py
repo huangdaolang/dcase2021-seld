@@ -34,7 +34,9 @@ class Solver(object):
 
         # optimizer selection part
         if self.params.optimizer == 'adam':
-            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.params.lr, weight_decay=0.0001)
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.params.lr, weight_decay=0.00001)
+        elif self.params.optimizer == 'sgd':
+            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.params.lr, momentum=0.9)
 
         # scheduler selection part
         if self.params.scheduler == 'plateau':

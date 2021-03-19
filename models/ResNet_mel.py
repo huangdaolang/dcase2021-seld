@@ -68,7 +68,7 @@ class ResNet(nn.Module):
         )
 
         self.rnn2 = nn.Sequential(
-            nn.GRU(input_size=128, bidirectional=True, dropout=0.5, hidden_size=64,
+            nn.GRU(input_size=128, bidirectional=True, hidden_size=64,
                    batch_first=True)
         )
 
@@ -125,7 +125,7 @@ class ResNet(nn.Module):
         doa_out = self.doa(output)
 
         sed_out = self.sed(output)
-
+        doa_out = torch.cat((sed_out, doa_out), 2)
         return sed_out, doa_out
 
 
