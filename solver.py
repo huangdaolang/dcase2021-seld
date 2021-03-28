@@ -95,9 +95,9 @@ class Solver(object):
 
                 loss.backward()
                 self.optimizer.step()
-                self.scheduler.step()
-
                 train_loss += loss.item()
+
+            self.scheduler.step()
             self.tr_loss[epoch_cnt] = train_loss / len(self.train_dataloader)
             print("Epoch [%d/%d], train loss : %.4f" % (epoch_cnt + 1, self.nb_epoch, self.tr_loss[epoch_cnt]))
 
@@ -107,11 +107,9 @@ class Solver(object):
 
             sed_pred = evaluation_metrics.reshape_3Dto2D(sed_out) > 0.5
             sed_pred = sed_pred.cpu().detach().numpy()
-            doa_pred = evaluation_metrics.reshape_3Dto2D(
-                doa_out if self.params.doa_objective is 'mse' else doa_out[:, :,
-                                                                   self.nb_classes:]).cpu().detach().numpy()
+            doa_pred = evaluation_metrics.reshape_3Dto2D(doa_out).cpu().detach().numpy()
             sed_gt = evaluation_metrics.reshape_3Dto2D(sed_label.cpu()).detach().numpy()
-            doa_gt = evaluation_metrics.reshape_3Dto2D(doa_label.cpu()).detach().numpy()[:, self.nb_classes:]
+            doa_gt = evaluation_metrics.reshape_3Dto2D(doa_label.cpu()).detach().numpy()
 
             # Calculate the DCASE 2020 metrics - Location-aware detection and Class-aware localization scores
             cls_metric = SELD_evaluation_metrics.SELDMetrics(nb_classes=self.nb_classes,

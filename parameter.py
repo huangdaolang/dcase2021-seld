@@ -11,7 +11,7 @@ def get_params():
     parser.add_argument('--dataset', type=str, default='foa',
                         help='foa - ambisonic or mic - microphone signals')
 
-    parser.add_argument('--input', type=str, default='raw',
+    parser.add_argument('--input', type=str, default='mel',
                         help='determine which input format to use: mel or raw audio')
     parser.add_argument('--model', type=str, default='crnn',
                         help='if input==mel, choose resnet or crnn')
@@ -55,7 +55,7 @@ def get_params():
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--scheduler', type=str, default='steplr')
     parser.add_argument('--dropout_rate', type=float, default=0.3)
-    parser.add_argument('--doa_objective', type=str, default='masked_mse',
+    parser.add_argument('--doa_objective', type=str, default='mse',
                         help='supports: mse, masked_mse. mse- original seld approach; masked_mse - dcase 2020 approach')
 
     # METRIC PARAMETERS

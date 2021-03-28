@@ -7,8 +7,8 @@ import random
 import torch
 
 ''' data output format: n_samples x channels x sequence length x n_mel (4000 x 7 x 300 x 64)
-    label output format: list[n_samples x sequence length x 14, n_samples x sequence length x 56]
-                             [SED, SED+DOA] 4000 x 60 x (56 and 14)'''
+    label output format: list[n_samples x sequence length x 14, n_samples x sequence length x 42]
+                             [SED, DOA] 4000 x 60 x (42 and 14)'''
 
 
 class Tau_Nigens(Dataset):
@@ -92,7 +92,8 @@ class Tau_Nigens(Dataset):
     def get_all_label(self):
         label = []
         for file in self._filenames_list:
-            file = file.split('.')[0] + ".npy"
+            if self._input == "raw":
+                file = file.split('.')[0] + ".npy"
             temp_label = np.load(os.path.join(self._label_dir, file))
             temp = []
             for row in temp_label:

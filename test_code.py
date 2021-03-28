@@ -128,13 +128,13 @@ class FeatureClass:
 if __name__ == "__main__":
     # params = parameter.get_params()
     # feature = cls_feature_class.FeatureClass(params)
-    # audio, fs = feature._load_audio('../Datasets/SELD/foa_dev/fold1_room1_mix001_ov1.wav')
-    # stft = np.abs(np.squeeze(feature._spectrogram(audio[:, :1])))
+    # audio, fs = feature.load_audio('../Datasets/SELD/foa_dev/fold1_room1_mix001_ov1.wav')
+    # stft = np.abs(np.squeeze(feature.spectrogram(audio[:, :1])))
     # stft = librosa.amplitude_to_db(stft, ref=np.max)
     # librosa.display.specshow(stft.T, sr=fs, x_axis='s', y_axis='linear')
     # plot.show()
-
-
+    #
+    #
     # waveform, sample_rate = feature.load_audio('dataset/foa_dev/fold1_room1_mix001_ov1.wav')
     #
     # print("waveform", waveform.shape)
