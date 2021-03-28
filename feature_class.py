@@ -1,5 +1,5 @@
 # Contains routines for labels creation, features extraction and normalization
-
+import parameter
 import os
 import numpy as np
 from sklearn import preprocessing
@@ -9,8 +9,10 @@ import librosa
 import math
 import torchaudio
 import torch
+import utils.utils_functions as utils
 plot.switch_backend('agg')
 torchaudio.set_audio_backend('sox_io')
+
 
 def nCr(n, r):
     return math.factorial(n) // math.factorial(r) // math.factorial(n-r)
@@ -60,10 +62,7 @@ class FeatureClass:
 
         # Sound event classes dictionary
         self._unique_classes = params.unique_classes
-        self._audio_max_len_samples = params.max_audio_len_s * self._fs  # TODO: Fix the audio synthesis code to always generate 60s of
-        # audio. Currently it generates audio till the last active sound event, which is not always 60s long. This is a
-        # quick fix to overcome that. We need this because, for processing and training we need the length of features
-        # to be fixed.
+        self._audio_max_len_samples = params.max_audio_len_s * self._fs
 
         self._max_feat_frames = int(np.ceil(self._audio_max_len_samples / float(self._hop_len)))
         self._max_label_frames = int(np.ceil(self._audio_max_len_samples / float(self._label_hop_len)))
@@ -204,7 +203,7 @@ class FeatureClass:
     def extract_all_feature(self):
         # setting up folders
         self._feat_dir = self.get_unnormalized_feat_dir()
-        create_folder(self._feat_dir)
+        utils.create_folder(self._feat_dir)
 
         # extraction starts
         print('Extracting spectrogram:')
@@ -245,7 +244,7 @@ class FeatureClass:
         # Setting up folders and filenames
         self._feat_dir = self.get_unnormalized_feat_dir()
         self._feat_dir_norm = self.get_normalized_feat_dir()
-        create_folder(self._feat_dir_norm)
+        utils.create_folder(self._feat_dir_norm)
         normalized_features_wts_file = self.get_normalized_wts_file()
         spec_scaler = None
 
@@ -291,11 +290,9 @@ class FeatureClass:
         print('Extracting labels:')
         print('\t\taud_dir {}\n\t\tdesc_dir {}\n\t\tlabel_dir {}'.format(
             self._aud_dir, self._desc_dir, self._label_dir))
-        create_folder(self._label_dir)
+        utils.create_folder(self._label_dir)
 
         for file_cnt, file_name in enumerate(os.listdir(self._desc_dir)):
-            if len(file_name)!=26: #checking clean metadata files #TODO this is not required if the dataset is clean
-                continue
             wav_filename = '{}.wav'.format(file_name.split('.')[0])
             desc_file_polar = self.load_output_format_file(os.path.join(self._desc_dir, file_name))
             desc_file = self.convert_output_format_polar_to_cartesian(desc_file_polar)
@@ -503,7 +500,7 @@ class FeatureClass:
         return self._nb_mel_bins
 
 
-def create_folder(folder_name):
-    if not os.path.exists(folder_name):
-        print('{} folder does not exist, creating it.'.format(folder_name))
-        os.makedirs(folder_name)
+if __name__ == "__main__":
+    params = parameter.get_params()
+    feature_class = FeatureClass(params)
+    print(feature_class)

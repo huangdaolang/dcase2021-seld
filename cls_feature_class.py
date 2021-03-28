@@ -41,7 +41,7 @@ class FeatureClass:
 
         self._fs = params.fs
         self._hop_len_s = params.hop_len_s
-        self._hop_len = int(self._fs * self._hop_len_s)
+        self._hop_len = int(self._fs * self._hop_len_s)  # *2
 
         self._label_hop_len_s = params.label_hop_len_s
         self._label_hop_len = int(self._fs * self._label_hop_len_s)

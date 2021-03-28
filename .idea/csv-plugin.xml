@@ -73,6 +73,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/seld_main.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/seld_torch.py">
           <value>
             <Attribute>

@@ -52,25 +52,25 @@ class SampleCNN(nn.Module):
             nn.ReLU(),
             nn.MaxPool1d(3, stride=3))
 
-        self.rnn1 = nn.Sequential(
-            nn.GRU(input_size=60, bidirectional=True, dropout=self.params.dropout_rate, hidden_size=int(self.params.rnn_size[0] / 2),
-                   batch_first=True)
-        )
-
-        self.rnn2 = nn.Sequential(
-            nn.GRU(input_size=self.params.rnn_size[1], bidirectional=True, dropout=self.params.dropout_rate, hidden_size=int(self.params.rnn_size[1] / 2),
-                   batch_first=True)
-        )
+        # self.rnn1 = nn.Sequential(
+        #     nn.GRU(input_size=65, bidirectional=True, dropout=self.params.dropout_rate, hidden_size=64,
+        #            batch_first=True)
+        # )
+        #
+        # self.rnn2 = nn.Sequential(
+        #     nn.GRU(input_size=self.params.rnn_size[1], bidirectional=True, dropout=self.params.dropout_rate, hidden_size=64,
+        #            batch_first=True)
+        # )
 
         self.doa = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(128, self.params.fnn_size[0]), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(65, self.params.fnn_size[0]), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(self.params.fnn_size[0], self.params.data_out[1][-1]), batch_first=True),
             nn.Tanh()
         )
 
         self.sed = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(128, self.params.fnn_size[0]), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(65, self.params.fnn_size[0]), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(self.params.fnn_size[0], self.params.data_out[0][-1]), batch_first=True),
             nn.Sigmoid()
@@ -83,7 +83,6 @@ class SampleCNN(nn.Module):
 
         x = x.view(x.shape[0], 4, -1)
         # x : 23 x 1 x 59049
-
         out = self.conv1(x)
         out = self.conv2(out)
         out = self.conv3(out)
@@ -91,13 +90,10 @@ class SampleCNN(nn.Module):
         out = self.conv5(out)
         out = self.conv6(out)
         out = self.conv7(out)
-        # print(out.shape)
-        out, h = self.rnn1(out)
-        out, h = self.rnn2(out)
-        # print(out.shape)
-
+        # out, h = self.rnn1(out)
+        # out, h = self.rnn2(out)
         doa_out = self.doa(out)
 
         sed_out = self.sed(out)
-
+        doa_out = torch.cat((sed_out, doa_out), 2)
         return sed_out, doa_out

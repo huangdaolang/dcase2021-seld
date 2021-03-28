@@ -1,7 +1,3 @@
-# Parameters used in the feature extraction, neural network model, and training the SELDnet can be changed here.
-#
-# Ideally, do not change the values of the default parameters. Create separate cases with unique <task-id> as seen in
-# the code below (if-else loop) and use them. This way you can easily reproduce a configuration on a later time.
 import argparse
 
 
@@ -15,14 +11,14 @@ def get_params():
     parser.add_argument('--dataset', type=str, default='foa',
                         help='foa - ambisonic or mic - microphone signals')
 
-    parser.add_argument('--input', type=str, default='mel',
+    parser.add_argument('--input', type=str, default='raw',
                         help='determine which input format to use: mel or raw audio')
     parser.add_argument('--model', type=str, default='crnn',
-                        help='resnet crnn or samplecnn')
+                        help='if input==mel, choose resnet or crnn')
 
-    parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2021/',
+    parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
                         help='Base folder containing the foa/mic and metadata folders')
-    parser.add_argument('--feat_label_dir', type=str, default='../Datasets/SELD2021/feat_label/',
+    parser.add_argument('--feat_label_dir', type=str, default='../Datasets/SELD2020/feat_label/',
                         help='Directory to dump extracted features and labels')
     parser.add_argument('--model_dir', type=str, default='trained_model/',
                         help='Dumps the trained models and training curves in this folder')
@@ -31,19 +27,16 @@ def get_params():
     parser.add_argument('--dcase_dir', type=str, default='results/',
                         help='Dumps the recording-wise network output in this folder')
 
-    # FEATURE PARAMS
+    # feature parameters
     parser.add_argument('--fs', type=int, default=24000)
     parser.add_argument('--hop_len_s', type=float, default=0.02)
     parser.add_argument('--label_hop_len_s', type=float, default=0.1)
     parser.add_argument('--max_audio_len_s', type=int, default=60)
-    parser.add_argument('--nb_mel_bins', type=int, default=64)
+    parser.add_argument('--nb_mel_bins', type=int, default=64)  # 96
 
     # DNN MODEL PARAMETERS
     parser.add_argument('--label_sequence_length', type=int, default=60,
-                        help='Feature sequence length')
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--dropout_rate', type=float, default=0.3,
-                        help='Dropout rate, constant for all layers')
+                        help='label length for one piece of data')
     parser.add_argument('--nb_cnn2d_filt', type=int, default=64,
                         help='Number of CNN nodes, constant for each layer')
     parser.add_argument('--f_pool_size', type=list, default=[4, 4, 2],
@@ -55,13 +48,13 @@ def get_params():
     parser.add_argument('--loss_weights', type=list, default=[1., 10.],
                         help='[sed, doa] weight for scaling the DNN outputs')
 
+    # model hyper-parameters
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--nb_epochs', type=int, default=40)
     parser.add_argument('--optimizer', type=str, default='adam')
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--scheduler', type=str, default='steplr')
-    parser.add_argument('--epochs_per_fit', type=int, default=5,
-                        help='Number of epochs per fit')
-
+    parser.add_argument('--dropout_rate', type=float, default=0.3)
     parser.add_argument('--doa_objective', type=str, default='masked_mse',
                         help='supports: mse, masked_mse. mse- original seld approach; masked_mse - dcase 2020 approach')
 
@@ -93,7 +86,7 @@ def get_params():
         'phone': 12,
         'piano': 13
     }
-    # print(type(params.__dict__))
+
     for key, value in params.__dict__.items():
         print("\t{}: {}".format(key, value))
     return params
