@@ -24,27 +24,26 @@ class Solver(object):
                                            nb_cnn2d_filt=params.nb_cnn2d_filt, f_pool_size=params.f_pool_size,
                                            t_pool_size=params.t_pool_size, rnn_size=params.rnn_size,
                                            fnn_size=params.fnn_size, doa_objective=params.doa_objective).to(self.device)
-                self.model = self.model.double()
             elif self.params.model == "resnet":
                 self.model = ResNet_mel.get_resnet(data_in=params.data_in, data_out=params.data_out).to(self.device)
-                self.model = self.model.double()
         elif self.params.input == "raw":
             self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
-            self.model = self.model.double()
+
+        self.model = self.model.double()
 
         # optimizer selection part
         if self.params.optimizer == 'adam':
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.params.lr, weight_decay=0.00001)
+            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.params.lr, weight_decay=0.00001)
         elif self.params.optimizer == 'sgd':
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.params.lr, momentum=0.9)
 
         # scheduler selection part
-        if self.params.scheduler == 'plateau':
-            self.scheduler = ReduceLROnPlateau(self.optimizer, factor=0.2, patience=2, verbose=True)
+        if self.params.scheduler == 'steplr':
+            self.scheduler = StepLR(self.optimizer, step_size=10, gamma=0.5)
         elif self.params.scheduler == 'cyclic':
             self.scheduler = CyclicLR(self.optimizer, base_lr=0.000001, max_lr=0.1, step_size_up=5, step_size_down=5)
-        elif self.params.scheduler == 'steplr':
-            self.scheduler = StepLR(self.optimizer, step_size=5, gamma=0.8)
+        elif self.params.scheduler == 'plateau':
+            self.scheduler = ReduceLROnPlateau(self.optimizer, factor=0.2, patience=2, verbose=True)
         else:
             self.scheduler = None
 
@@ -58,7 +57,7 @@ class Solver(object):
                                            drop_last=True)
         # test set not implemented
         # self.test_dataloader = DataLoader(self.data_test, batch_size=params.batch_size, shuffle=False,
-        #                                    drop_last=True)
+        #                                    drop_last=False)
         self.nb_classes = self.data_train.get_nb_classes()
 
         self.criterion1 = nn.BCELoss()
@@ -79,15 +78,13 @@ class Solver(object):
         self.writer = SummaryWriter(os.path.join("log/", unique_name))
 
     def train(self):
-        print("Model", self.model)
-        # start training
+        print("Start training", self.model)
         for epoch_cnt in range(self.nb_epoch):
             start = time.time()
-
-            # train once per epoch
             self.model.train()
             train_loss = 0
             for i, data in enumerate(self.train_dataloader):
+                self.optimizer.zero_grad()
                 feature = data['feature'].to(self.device)
                 sed_label = data['label'][0].to(self.device)
                 doa_label = data['label'][1].to(self.device)
@@ -95,10 +92,10 @@ class Solver(object):
                 sed_out, doa_out = self.model(feature)
                 loss = self.loss_weights[0] * self.criterion1(sed_out, sed_label) + \
                        self.loss_weights[1] * self.criterion2(doa_out, doa_label)
-                self.optimizer.zero_grad()
+
                 loss.backward()
                 self.optimizer.step()
-                # self.scheduler.step()
+                self.scheduler.step()
 
                 train_loss += loss.item()
             self.tr_loss[epoch_cnt] = train_loss / len(self.train_dataloader)

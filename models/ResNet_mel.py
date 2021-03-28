@@ -125,7 +125,7 @@ class ResNet(nn.Module):
         doa_out = self.doa(output)
 
         sed_out = self.sed(output)
-        doa_out = torch.cat((sed_out, doa_out), 2)
+
         return sed_out, doa_out
 
 

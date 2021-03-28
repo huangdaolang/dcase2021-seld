@@ -95,5 +95,5 @@ class SampleCNN(nn.Module):
         doa_out = self.doa(out)
 
         sed_out = self.sed(out)
-        doa_out = torch.cat((sed_out, doa_out), 2)
+
         return sed_out, doa_out

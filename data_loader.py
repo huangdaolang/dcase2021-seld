@@ -104,7 +104,7 @@ class Tau_Nigens(Dataset):
         print("Label shape", label.shape)
         label = [
             torch.tensor(label[:, :, :self._nb_classes]),  # SED labels
-            torch.tensor(label)  # SED + DOA labels
+            torch.tensor(label[:, :, self._nb_classes:])  # DOA labels
         ]
 
         return label
