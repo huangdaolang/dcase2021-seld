@@ -90,8 +90,8 @@ class Solver(object):
             for i, data in enumerate(self.train_dataloader):
                 self.optimizer.zero_grad()
                 feature = data['feature'].to(self.device)
-                sed_label = data['label'][0].to(self.device)
-                doa_label = data['label'][1].to(self.device)
+                sed_label = data['label'][:, :, :self.nb_classes].to(self.device)
+                doa_label = data['label'][:, :, self.nb_classes:].to(self.device)
 
                 sed_out, doa_out = self.model(feature)
                 loss = self.loss_weights[0] * self.criterion1(sed_out, sed_label) + \
@@ -202,8 +202,8 @@ class Solver(object):
         val_loss = 0
         for i, data in enumerate(self.val_dataloader):
             feature = data['feature'].to(self.device)
-            sed_label = data['label'][0].to(self.device)
-            doa_label = data['label'][1].to(self.device)
+            sed_label = data['label'][:, :, :self.nb_classes].to(self.device)
+            doa_label = data['label'][:, :, self.nb_classes:].to(self.device)
 
             sed_out, doa_out = self.model(feature)
             loss = self.loss_weights[0] * self.criterion1(sed_out, sed_label) + \

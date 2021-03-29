@@ -41,17 +41,17 @@ def main():
         # Load train and validation data
         print('Loading training dataset:')
         data_train = data_loader.Tau_Nigens(
-            params=params, split=train_splits[split_cnt]
+            params=params, split=train_splits[split_cnt], is_aug=params.augmentation
         )
 
         print('Loading validation dataset:')
         data_val = data_loader.Tau_Nigens(
-            params=params, split=val_splits[split_cnt]
+            params=params, split=val_splits[split_cnt], is_aug=False
         )
 
         print('Loading test dataset:')
         data_test = data_loader.Tau_Nigens(
-            params=params, split=test_splits[split_cnt], shuffle=False
+            params=params, split=test_splits[split_cnt], shuffle=False, is_aug=False
         )
 
         print('Using loss weights : {}'.format(params.loss_weights))

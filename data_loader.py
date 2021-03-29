@@ -5,6 +5,7 @@ import os
 import feature_class
 import random
 import torch
+import data_augmentation as aug
 
 ''' data output format: n_samples x channels x sequence length x n_mel (4000 x 7 x 300 x 64)
     label output format: list[n_samples x sequence length x 14, n_samples x sequence length x 42]
@@ -12,7 +13,7 @@ import torch
 
 
 class Tau_Nigens(Dataset):
-    def __init__(self, params, split, shuffle=True, is_eval=False):
+    def __init__(self, params, split, shuffle=True, is_eval=False, is_aug=False):
         self.params = params
         self._input = params.input
         self._is_eval = is_eval
@@ -24,6 +25,7 @@ class Tau_Nigens(Dataset):
         self._label_dir = self._feat_cls.get_label_dir()
         self._feat_dir = self._feat_cls.get_normalized_feat_dir()
         self._raw_dir = self._feat_cls.get_raw_dir()
+        self.augmentation = params.augmentation
 
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
@@ -45,17 +47,16 @@ class Tau_Nigens(Dataset):
             self.data = self.get_all_data_raw()
         self.label = self.get_all_label()
 
+        if self._input == "mel" and self.augmentation:
+            self.spec_augmentation()
+
         print(
             '\tfiles number: {}, classes number:{}\n'
             '\tnumber of frames per file: {}, mel bins length: {}, channels number: {}\n'
-            '\tfeat length per sequence: {}, label length per sequence: {}\n'
-            '\tlabel_dir: {}\n '
-            '\tfeat_dir: {}\n'.format(
+            '\tfeat length per sequence: {}, label length per sequence: {}\n'.format(
                 len(self._filenames_list),  self._nb_classes,
                 self._nb_frames_file, self._nb_mel_bins, self._nb_ch,
-                self._feature_seq_len, self._label_seq_len,
-                self._label_dir,
-                self._feat_dir))
+                self._feature_seq_len, self._label_seq_len))
 
     def get_all_data_mel(self):
         print("start to fetch mel spectrogram features data")
@@ -103,15 +104,19 @@ class Tau_Nigens(Dataset):
                     temp = []
         label = np.array(label)
         print("Label shape", label.shape)
-        label = [
-            torch.tensor(label[:, :, :self._nb_classes]),  # SED labels
-            torch.tensor(label[:, :, self._nb_classes:])  # DOA labels
-        ]
+        return torch.tensor(label)
 
-        return label
+    def spec_augmentation(self):
+        for i, data in enumerate(self.data):
+            aug_freq_data = aug.freq_mask(data).unsqueeze(0)
+            self.data = torch.cat((self.data, aug_freq_data), 0)
+            self.label = torch.cat((self.label, self.label[i].unsqueeze(0)), 0)
+            aug_time_data = aug.time_mask(data).unsqueeze(0)
+            self.data = torch.cat((self.data, aug_time_data), 0)
+            self.label = torch.cat((self.label, self.label[i].unsqueeze(0)), 0)
 
     def __getitem__(self, index):
-        entry = {"feature": self.data[index], "label": [self.label[0][index], self.label[1][index]]}
+        entry = {"feature": self.data[index], "label": self.label[index]}
         return entry
 
     def __len__(self):
