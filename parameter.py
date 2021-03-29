@@ -11,7 +11,7 @@ def get_params():
     parser.add_argument('--dataset', type=str, default='foa',
                         help='foa - ambisonic or mic - microphone signals')
 
-    parser.add_argument('--input', type=str, default='mel',
+    parser.add_argument('--input', type=str, default='raw',
                         help='determine which input format to use: mel or raw audio')
     parser.add_argument('--model', type=str, default='crnn',
                         help='if input==mel, choose resnet or crnn')

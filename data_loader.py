@@ -143,6 +143,9 @@ class Tau_Nigens(Dataset):
     def nb_frames_1s(self):
         return self._feat_cls.nb_frames_1s()
 
+    def get_filelist(self):
+        return self._filenames_list
+
 
 if __name__ == "__main__":
     params = parameter.get_params()

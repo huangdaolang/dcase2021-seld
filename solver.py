@@ -49,15 +49,15 @@ class Solver(object):
 
         self.nb_epoch = 2 if self.params.quick_test else self.params.nb_epochs
 
+        # load data
         self.data_val = data_val
         self.data_train = data_train
         self.data_test = data_test
         self.val_dataloader = DataLoader(self.data_val, batch_size=params.batch_size, shuffle=True, drop_last=True)
         self.train_dataloader = DataLoader(self.data_train, batch_size=params.batch_size, shuffle=True,
                                            drop_last=True)
-        # test set not implemented
-        # self.test_dataloader = DataLoader(self.data_test, batch_size=params.batch_size, shuffle=False,
-        #                                    drop_last=False)
+        self.test_dataloader = DataLoader(self.data_test, batch_size=params.batch_size, shuffle=False, drop_last=False)
+
         self.nb_classes = self.data_train.get_nb_classes()
 
         self.criterion1 = nn.BCELoss()
@@ -129,9 +129,6 @@ class Solver(object):
             self.early_stop_metric[epoch_cnt] = evaluation_metrics.early_stopping_metric(self.seld_metric[epoch_cnt, :2],
                                                                                          self.seld_metric[epoch_cnt, 2:])
 
-            # Visualize the metrics with respect to epochs
-            # plot_functions(unique_name, tr_loss, sed_metric, doa_metric, seld_metric, new_metric, new_seld_metric)
-
             self.patience_cnt += 1
             if self.early_stop_metric[epoch_cnt] < self.best_seld_metric:
                 self.best_seld_metric = self.early_stop_metric[epoch_cnt]
@@ -178,6 +175,13 @@ class Solver(object):
                 self.seld_metric[self.best_epoch, 0],
                 self.seld_metric[
                     self.best_epoch, 1] * 100))
+
+        # save model parameters
+        model_name = self.unique_name + ".pth"
+        torch.save(self.model.state_dict(), os.path.join(self.params.model_dir, model_name))
+
+        # TODO add test set
+        # TODO visualization
 
     def validation(self, epoch_cnt):
         self.model.eval()

@@ -35,7 +35,7 @@ class CRNN(nn.Module):
         )
 
         self.rnn1 = nn.Sequential(
-            nn.GRU(input_size=rnn_size[0], bidirectional=True, dropout=dropout_rate, hidden_size=int(rnn_size[0]/2),
+            nn.GRU(input_size=rnn_size[0], bidirectional=True, hidden_size=int(rnn_size[0]/2),
                    batch_first=True)
         )
 
@@ -46,14 +46,12 @@ class CRNN(nn.Module):
 
         self.doa = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(128, fnn_size[0]), batch_first=True),
-            nn.Dropout(dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(fnn_size[0], self.data_out[1][-1]), batch_first=True),
             nn.Tanh()
         )
 
         self.sed = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(128, fnn_size[0]), batch_first=True),
-            nn.Dropout(dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(fnn_size[0], self.data_out[0][-1]), batch_first=True),
             nn.Sigmoid()
         )

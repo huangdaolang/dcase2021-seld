@@ -45,10 +45,10 @@ class SampleCNN(nn.Module):
             nn.ReLU(),
             nn.MaxPool1d(3, stride=3),
             nn.Dropout(self.params.dropout_rate))
-        # 81 x 256
+        # 60 x 128
         self.conv7 = nn.Sequential(
-            nn.Conv1d(256, 60, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm1d(60),
+            nn.Conv1d(256, 128, kernel_size=20, stride=1, padding=1),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.MaxPool1d(3, stride=3))
 
@@ -63,14 +63,14 @@ class SampleCNN(nn.Module):
         # )
 
         self.doa = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(65, self.params.fnn_size[0]), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(128, self.params.fnn_size[0]), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(self.params.fnn_size[0], self.params.data_out[1][-1]), batch_first=True),
             nn.Tanh()
         )
 
         self.sed = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(65, self.params.fnn_size[0]), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(128, self.params.fnn_size[0]), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(self.params.fnn_size[0], self.params.data_out[0][-1]), batch_first=True),
             nn.Sigmoid()
@@ -90,6 +90,7 @@ class SampleCNN(nn.Module):
         out = self.conv5(out)
         out = self.conv6(out)
         out = self.conv7(out)
+        out = out.permute(0, 2, 1)
         # out, h = self.rnn1(out)
         # out, h = self.rnn2(out)
         doa_out = self.doa(out)
