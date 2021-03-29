@@ -108,6 +108,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/utils/visualize_SELD_output.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

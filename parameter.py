@@ -1,17 +1,17 @@
 import argparse
 
 
-def get_params():
+def get_params(output=True):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--quick_test', type=bool, default=False,
+    parser.add_argument('--quick_test', type=bool, default=True,
                         help='To do quick test. Trains/test on small subset of dataset, and 2 epochs')
     parser.add_argument('--mode', type=str, default='dev',
                         help='dev or eval')
     parser.add_argument('--dataset', type=str, default='foa',
                         help='foa - ambisonic or mic - microphone signals')
 
-    parser.add_argument('--input', type=str, default='raw',
+    parser.add_argument('--input', type=str, default='mel',
                         help='determine which input format to use: mel or raw audio')
     parser.add_argument('--model', type=str, default='crnn',
                         help='if input==mel, choose resnet or crnn')
@@ -86,9 +86,9 @@ def get_params():
         'phone': 12,
         'piano': 13
     }
-
-    for key, value in params.__dict__.items():
-        print("\t{}: {}".format(key, value))
+    if output:
+        for key, value in params.__dict__.items():
+            print("\t{}: {}".format(key, value))
     return params
 
 

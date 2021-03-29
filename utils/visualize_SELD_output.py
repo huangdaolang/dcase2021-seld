@@ -1,7 +1,3 @@
-# Script for visualising the SELD output.
-#
-# NOTE: Make sure to use the appropriate backend for the matplotlib based on your OS
-
 import os
 import numpy as np
 import librosa.display
@@ -40,53 +36,47 @@ def plot_func(plot_data, hop_len_s, ind, plot_x_ax=False, plot_y_ax=False):
 
 
 # --------------------------------- MAIN SCRIPT STARTS HERE -----------------------------------------
-params = parameter.get_params()
+def visualize_output(params):
+    feat_cls = feature_class.FeatureClass(params)
 
-# output format file to visualize
-pred = os.path.join(params.dcase_dir, 'foa_dev/fold1_room1_mix006_ov1.csv')
+    sed_pred_reg = np.load('../results/sed_pred.npy')[0:600]
+    sed_gt_reg = np.load('../results/sed_gt.npy')[0:600]
+    doa_pred_reg = np.load('../results/doa_pred.npy')[0:600]
+    doa_gt_reg = np.load('../results/doa_gt.npy')[0:600]
 
-# path of reference audio directory for visualizing the spectrogram and description directory for
-# visualizing the reference
-# Note: The code finds out the audio filename from the predicted filename automatically
-ref_dir = os.path.join(params.dataset_dir, 'metadata_dev')
-aud_dir = os.path.join(params.dataset_dir, 'foa_dev')
+    pred_dict = feat_cls.regression_label_format_to_output_format(sed_pred_reg, doa_pred_reg)
+    gt_dict = feat_cls.regression_label_format_to_output_format(sed_gt_reg, doa_gt_reg)
+    pred_dict_polar = feat_cls.convert_output_format_cartesian_to_polar(pred_dict)
+    gt_dict_polar = feat_cls.convert_output_format_cartesian_to_polar(gt_dict)
+    # output format file to visualize
 
-# load the predicted output format
-feat_cls = feature_class.FeatureClass(params)
-pred_dict = feat_cls.load_output_format_file(pred)
-pred_dict_polar = feat_cls.convert_output_format_cartesian_to_polar(pred_dict)
+    pred_data = collect_classwise_data(pred_dict_polar)
+    ref_data = collect_classwise_data(gt_dict_polar)
 
-# load the reference output format
-ref_filename = os.path.basename(pred)
-ref_dict_polar = feat_cls.load_output_format_file(os.path.join(ref_dir, ref_filename))
+    nb_classes = len(feat_cls.get_classes())
 
-pred_data = collect_classwise_data(pred_dict_polar)
-ref_data = collect_classwise_data(ref_dict_polar)
+    # load the audio and extract spectrogram
 
-nb_classes = len(feat_cls.get_classes())
+    plot.figure(figsize=(20, 15))
+    gs = gridspec.GridSpec(4, 4)
+    ax1 = plot.subplot(gs[1, :2]), plot_func(ref_data, params.label_hop_len_s, ind=1, plot_y_ax=True), plot.ylim(
+        [-1, nb_classes + 1]), plot.title('SED reference')
+    ax2 = plot.subplot(gs[1, 2:]), plot_func(pred_data, params.label_hop_len_s, ind=1), plot.ylim(
+        [-1, nb_classes + 1]), plot.title('SED predicted')
+    ax3 = plot.subplot(gs[2, :2]), plot_func(ref_data, params.label_hop_len_s, ind=2, plot_y_ax=True), plot.ylim(
+        [-180, 180]), plot.title('Azimuth reference')
+    ax4 = plot.subplot(gs[2, 2:]), plot_func(pred_data, params.label_hop_len_s, ind=2), plot.ylim(
+        [-180, 180]), plot.title('Azimuth predicted')
+    ax5 = plot.subplot(gs[3, :2]), plot_func(ref_data, params.label_hop_len_s, ind=3, plot_y_ax=True), plot.ylim(
+        [-90, 90]), plot.title('Elevation reference')
+    ax6 = plot.subplot(gs[3, 2:]), plot_func(pred_data, params.label_hop_len_s, ind=3), plot.ylim([-90, 90]), plot.title(
+        'Elevation predicted')
+    ax_lst = [ax1, ax2, ax3, ax4, ax5, ax6]
 
-# load the audio and extract spectrogram
-ref_filename = os.path.basename(pred).replace('.csv', '.wav')
-audio, fs = feat_cls.load_audio(os.path.join(aud_dir, ref_filename))
-stft = np.abs(np.squeeze(feat_cls.spectrogram(audio[:, :1])))
-stft = librosa.amplitude_to_db(stft, ref=np.max)
+    plot.savefig('../images/output.jpg', dpi=300, bbox_inches="tight")
 
-plot.figure(figsize=(20, 15))
-gs = gridspec.GridSpec(4, 4)
-ax0 = plot.subplot(gs[0, 1:3]), librosa.display.specshow(stft.T, sr=fs, x_axis='s', y_axis='linear'), plot.xlim(
-    [0, 60]), plot.xticks([]), plot.xlabel(''), plot.title('Spectrogram')
-ax1 = plot.subplot(gs[1, :2]), plot_func(ref_data, params.label_hop_len_s, ind=1, plot_y_ax=True), plot.ylim(
-    [-1, nb_classes + 1]), plot.title('SED reference')
-ax2 = plot.subplot(gs[1, 2:]), plot_func(pred_data, params.label_hop_len_s, ind=1), plot.ylim(
-    [-1, nb_classes + 1]), plot.title('SED predicted')
-ax3 = plot.subplot(gs[2, :2]), plot_func(ref_data, params.label_hop_len_s, ind=2, plot_y_ax=True), plot.ylim(
-    [-180, 180]), plot.title('Azimuth reference')
-ax4 = plot.subplot(gs[2, 2:]), plot_func(pred_data, params.label_hop_len_s, ind=2), plot.ylim(
-    [-180, 180]), plot.title('Azimuth predicted')
-ax5 = plot.subplot(gs[3, :2]), plot_func(ref_data, params.label_hop_len_s, ind=3, plot_y_ax=True), plot.ylim(
-    [-90, 90]), plot.title('Elevation reference')
-ax6 = plot.subplot(gs[3, 2:]), plot_func(pred_data, params.label_hop_len_s, ind=3), plot.ylim([-90, 90]), plot.title(
-    'Elevation predicted')
-ax_lst = [ax0, ax1, ax2, ax3, ax4, ax5, ax6]
 
-plot.savefig(os.path.join(params.dcase_dir, ref_filename.replace('.wav', '.jpg')), dpi=300, bbox_inches="tight")
+if __name__ == "__main__":
+    params = parameter.get_params(output=False)
+    visualize_output(params)
+

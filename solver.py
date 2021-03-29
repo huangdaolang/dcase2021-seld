@@ -79,6 +79,10 @@ class Solver(object):
 
     def train(self):
         print("Start training", self.model)
+        sed_pred = None
+        sed_gt = None
+        doa_pred = None
+        doa_gt = None
         for epoch_cnt in range(self.nb_epoch):
             start = time.time()
             self.model.train()
@@ -181,7 +185,10 @@ class Solver(object):
         torch.save(self.model.state_dict(), os.path.join(self.params.model_dir, model_name))
 
         # TODO add test set
-        # TODO visualization
+        np.save('results/sed_pred.npy', sed_pred)
+        np.save('results/sed_gt.npy', sed_gt)
+        np.save('results/doa_pred.npy', doa_pred)
+        np.save('results/doa_gt.npy', doa_gt)
 
     def validation(self, epoch_cnt):
         self.model.eval()

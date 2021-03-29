@@ -150,4 +150,3 @@ class Tau_Nigens(Dataset):
 if __name__ == "__main__":
     params = parameter.get_params()
     dataset = Tau_Nigens(params, split=[3, 4, 5, 6])
-    print("")
