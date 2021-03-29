@@ -101,13 +101,16 @@ class Solver(object):
                 self.optimizer.step()
                 train_loss += loss.item()
 
-            self.scheduler.step()
             self.tr_loss[epoch_cnt] = train_loss / len(self.train_dataloader)
             print("Epoch [%d/%d], train loss : %.4f" % (epoch_cnt + 1, self.nb_epoch, self.tr_loss[epoch_cnt]))
 
             self.writer.add_scalar('Train Loss', self.tr_loss[epoch_cnt], epoch_cnt)
             self.writer.flush()
-            sed_out, doa_out, sed_label, doa_label = self.validation(epoch_cnt)
+            sed_out, doa_out, sed_label, doa_label, val_loss = self.validation(epoch_cnt)
+            if self.params.scheduler == 'plateau':
+                self.scheduler.step(val_loss)
+            else:
+                self.scheduler.step()
 
             sed_pred = evaluation_metrics.reshape_3Dto2D(sed_out) > 0.5
             sed_pred = sed_pred.cpu().detach().numpy()
@@ -209,9 +212,10 @@ class Solver(object):
 
         print("Epoch [%d/%d], val loss : %.4f" % (epoch_cnt + 1, self.nb_epoch,
                                                   val_loss / len(self.val_dataloader)))
-        self.writer.add_scalar('Validation Loss', val_loss / len(self.val_dataloader), epoch_cnt)
+        val_loss = val_loss / len(self.val_dataloader)
+        self.writer.add_scalar('Validation Loss', val_loss, epoch_cnt)
         self.writer.flush()
-        return sed_out, doa_out, sed_label, doa_label
+        return sed_out, doa_out, sed_label, doa_label, val_loss
 
     def test(self):
         print('\nLoading the best model and predicting results on the testing split')

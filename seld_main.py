@@ -51,7 +51,7 @@ def main():
 
         print('Loading test dataset:')
         data_test = data_loader.Tau_Nigens(
-            params=params, split=test_splits[split_cnt], is_eval=True, shuffle=False
+            params=params, split=test_splits[split_cnt], shuffle=False
         )
 
         print('Using loss weights : {}'.format(params.loss_weights))

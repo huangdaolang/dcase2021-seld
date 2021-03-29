@@ -24,6 +24,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/data_augmentation.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/data_loader.py">
           <value>
             <Attribute>

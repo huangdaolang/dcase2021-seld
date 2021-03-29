@@ -35,7 +35,6 @@ def plot_func(plot_data, hop_len_s, ind, plot_x_ax=False, plot_y_ax=False):
         plot.gca().axes.set_yticklabels([])
 
 
-# --------------------------------- MAIN SCRIPT STARTS HERE -----------------------------------------
 def visualize_output(params):
     feat_cls = feature_class.FeatureClass(params)
 

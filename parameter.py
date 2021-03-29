@@ -53,7 +53,7 @@ def get_params(output=True):
     parser.add_argument('--nb_epochs', type=int, default=40)
     parser.add_argument('--optimizer', type=str, default='adam')
     parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--scheduler', type=str, default='steplr')
+    parser.add_argument('--scheduler', type=str, default='plateau')
     parser.add_argument('--dropout_rate', type=float, default=0.3)
     parser.add_argument('--doa_objective', type=str, default='mse',
                         help='supports: mse, masked_mse. mse- original seld approach; masked_mse - dcase 2020 approach')
