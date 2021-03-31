@@ -11,11 +11,11 @@ def get_params(output=True):
     parser.add_argument('--dataset', type=str, default='foa',
                         help='foa - ambisonic or mic - microphone signals')
 
-    parser.add_argument('--input', type=str, default='mel',
+    parser.add_argument('--input', type=str, default='raw',
                         help='determine which input format to use: mel or raw audio')
-    parser.add_argument('--model', type=str, default='crnn',
+    parser.add_argument('--model', type=str, default='samplecnn',
                         help='if input==mel, choose resnet or crnn')
-    parser.add_argument('--augmentation', type=bool, default=False)
+    parser.add_argument('--augmentation', type=bool, default=True)
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
                         help='Base folder containing the foa/mic and metadata folders')

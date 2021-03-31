@@ -25,7 +25,7 @@ class Tau_Nigens(Dataset):
         self._label_dir = self._feat_cls.get_label_dir()
         self._feat_dir = self._feat_cls.get_normalized_feat_dir()
         self._raw_dir = self._feat_cls.get_raw_dir()
-        self.augmentation = params.augmentation
+        self._augmentation = is_aug
 
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
@@ -47,7 +47,7 @@ class Tau_Nigens(Dataset):
             self.data = self.get_all_data_raw()
         self.label = self.get_all_label()
 
-        if self._input == "mel" and self.augmentation:
+        if self._input == "mel" and self._augmentation:
             self.spec_augmentation()
 
         print(
@@ -59,7 +59,7 @@ class Tau_Nigens(Dataset):
                 self._feature_seq_len, self._label_seq_len))
 
     def get_all_data_mel(self):
-        print("start to fetch mel spectrogram features data")
+        print("\tstart to fetch mel spectrogram features data")
         data = []
         for file in self._filenames_list:
             features_per_file = np.load(os.path.join(self._feat_dir, file))  # 3000*448 (448 is mel * channel)
@@ -73,11 +73,11 @@ class Tau_Nigens(Dataset):
         data = np.reshape(data, (int(self._len_file*(self._nb_frames_file/self._feature_seq_len)),
                                  self._feature_seq_len, self._nb_mel_bins, self._nb_ch))
         data = np.transpose(data, (0, 3, 1, 2))  # samples, channel, width, height
-        print("Data frames shape: [n_samples, channel, width, height]", data.shape)
+        print("\tData frames shape: [n_samples, channel, width, height]:{}\n".format(data.shape))
         return torch.tensor(data, dtype=torch.double)
 
     def get_all_data_raw(self):
-        print("start to get fetch raw audio data")
+        print("\tstart to get fetch raw audio data")
         data = []
         for file in self._filenames_list:
             audio_path = os.path.join(self._raw_dir, file)
@@ -87,7 +87,7 @@ class Tau_Nigens(Dataset):
                 data_seg = raw[i*segmentation:(i+1)*segmentation].numpy().T
                 data.append(data_seg)
         data = np.array(data)
-        print("Data frames shape: [n_samples, channel, audio_samples]", data.shape)
+        print("\tData frames shape: [n_samples, channel, audio_samples]:{}\n".format(data.shape))
         return torch.tensor(data, dtype=torch.double)
 
     def get_all_label(self):
@@ -103,7 +103,7 @@ class Tau_Nigens(Dataset):
                     label.append(temp)
                     temp = []
         label = np.array(label)
-        print("Label shape", label.shape)
+        print("\tLabel shape:{}\n".format(label.shape))
         return torch.tensor(label)
 
     def spec_augmentation(self):
@@ -114,6 +114,7 @@ class Tau_Nigens(Dataset):
             aug_time_data = aug.time_mask(data).unsqueeze(0)
             self.data = torch.cat((self.data, aug_time_data), 0)
             self.label = torch.cat((self.label, self.label[i].unsqueeze(0)), 0)
+
 
     def __getitem__(self, index):
         entry = {"feature": self.data[index], "label": self.label[index]}
