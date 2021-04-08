@@ -59,44 +59,49 @@ class SampleCNN(nn.Module):
             nn.ReLU())
         # 48000 x 128
         self.conv2 = nn.Sequential(
-            nn.Conv1d(128, 128, kernel_size=2, stride=1, padding=1),
+            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(128),
+            nn.Dropout(self.params.dropout_rate),
             nn.ReLU(),
             nn.MaxPool1d(2, stride=2))
         # 24000 x 128
         self.conv3 = nn.Sequential(
-            nn.Conv1d(128, 128, kernel_size=2, stride=1, padding=1),
+            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(128),
+            nn.Dropout(self.params.dropout_rate),
             nn.ReLU(),
             nn.MaxPool1d(2, stride=2))
         # 12000 x 128
         self.conv4 = nn.Sequential(
-            nn.Conv1d(128, 256, kernel_size=2, stride=1, padding=1),
+            nn.Conv1d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(256),
+            nn.Dropout(self.params.dropout_rate),
             nn.ReLU(),
             nn.MaxPool1d(2, stride=2))
         # 6000 x 256
         self.conv5 = nn.Sequential(
-            nn.Conv1d(256, 256, kernel_size=2, stride=1, padding=1),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(256),
+            nn.Dropout(self.params.dropout_rate),
             nn.ReLU(),
             nn.MaxPool1d(2, stride=2))
         # 3000 x 256
         self.conv6 = nn.Sequential(
-            nn.Conv1d(256, 256, kernel_size=2, stride=1, padding=1),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(256),
+            nn.Dropout(self.params.dropout_rate),
             nn.ReLU(),
-            nn.MaxPool1d(2, stride=2),
-            nn.Dropout(self.params.dropout_rate))
+            nn.MaxPool1d(2, stride=2))
         # 1500 x 256
         self.conv7 = nn.Sequential(
-            nn.Conv1d(256, 128, kernel_size=2, stride=1, padding=1),
+            nn.Conv1d(256, 128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(128),
+            nn.Dropout(self.params.dropout_rate),
             nn.ReLU(),
             nn.MaxPool1d(5, stride=5))
         # 300 x 128
         self.conv8 = nn.Sequential(
-            nn.Conv1d(128, 128, kernel_size=2, stride=1, padding=1),
+            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.MaxPool1d(5, stride=5))

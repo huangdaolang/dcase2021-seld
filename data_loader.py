@@ -50,6 +50,10 @@ class Tau_Nigens(Dataset):
         if self._input == "mel" and self._augmentation:
             self.spec_augmentation()
 
+        if self.params.quick_test:
+            self.data = self.data[:500]
+            self.label = self.label[:500]
+
         print(
             '\tfiles number: {}, classes number:{}\n'
             '\tnumber of frames per file: {}, mel bins length: {}, channels number: {}\n'
