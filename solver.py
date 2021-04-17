@@ -8,6 +8,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, CyclicLR, StepLR
 from metrics import evaluation_metrics, SELD_evaluation_metrics
 from torch.utils.tensorboard import SummaryWriter
 import os
+from utils import get_accdoa
 
 
 class Solver(object):
@@ -19,11 +20,7 @@ class Solver(object):
         # model selection part
         if self.params.input == "mel":
             if self.params.model == "crnn":
-                self.model = CRNN_mel.CRNN(data_in=params.data_in, data_out=params.data_out,
-                                           dropout_rate=params.dropout_rate,
-                                           nb_cnn2d_filt=params.nb_cnn2d_filt, f_pool_size=params.f_pool_size,
-                                           t_pool_size=params.t_pool_size, rnn_size=params.rnn_size,
-                                           fnn_size=params.fnn_size, doa_objective=params.doa_objective).to(self.device)
+                self.model = CRNN_mel.CRNN(dropout_rate=params.dropout_rate).to(self.device)
             elif self.params.model == "resnet":
                 self.model = ResNet_mel.get_resnet(data_in=params.data_in, data_out=params.data_out).to(self.device)
         elif self.params.input == "raw":
@@ -60,8 +57,7 @@ class Solver(object):
 
         self.nb_classes = self.data_train.get_nb_classes()
 
-        self.criterion1 = nn.BCELoss()
-        self.criterion2 = nn.MSELoss()  # TODO add masked_mse
+        self.criterion = nn.MSELoss()
         self.best_seld_metric = 99999
         self.best_epoch = -1
         self.patience_cnt = 0
@@ -70,7 +66,6 @@ class Solver(object):
         self.tr_loss = np.zeros(self.nb_epoch)
         self.seld_metric = np.zeros((self.nb_epoch, 4))
         self.feat_cls = feat_cls
-        self.loss_weights = self.params.loss_weights
         self.lad_doa_thresh = self.params.lad_doa_thresh
 
         self.avg_scores_val = []
@@ -90,12 +85,10 @@ class Solver(object):
             for i, data in enumerate(self.train_dataloader):
                 self.optimizer.zero_grad()
                 feature = data['feature'].to(self.device)
-                sed_label = data['label'][:, :, :self.nb_classes].to(self.device)
-                doa_label = data['label'][:, :, self.nb_classes:].to(self.device)
+                label = data['label'].to(self.device)
 
-                sed_out, doa_out = self.model(feature)
-                loss = self.loss_weights[0] * self.criterion1(sed_out, sed_label) + \
-                       self.loss_weights[1] * self.criterion2(doa_out, doa_label)
+                out = self.model(feature)
+                loss = self.criterion(out, label)
 
                 loss.backward()
                 self.optimizer.step()
@@ -106,17 +99,17 @@ class Solver(object):
 
             self.writer.add_scalar('Train Loss', self.tr_loss[epoch_cnt], epoch_cnt)
             self.writer.flush()
+            # validate
             sed_out, doa_out, sed_label, doa_label, val_loss = self.validation(epoch_cnt)
             if self.params.scheduler == 'plateau':
                 self.scheduler.step(val_loss)
             else:
                 self.scheduler.step()
 
-            sed_pred = evaluation_metrics.reshape_3Dto2D(sed_out) > 0.5
-            sed_pred = sed_pred.cpu().detach().numpy()
-            doa_pred = evaluation_metrics.reshape_3Dto2D(doa_out).cpu().detach().numpy()
-            sed_gt = evaluation_metrics.reshape_3Dto2D(sed_label.cpu()).detach().numpy()
-            doa_gt = evaluation_metrics.reshape_3Dto2D(doa_label.cpu()).detach().numpy()
+            sed_pred = evaluation_metrics.reshape_3Dto2D(sed_out)
+            doa_pred = evaluation_metrics.reshape_3Dto2D(doa_out)
+            sed_gt = evaluation_metrics.reshape_3Dto2D(sed_label)
+            doa_gt = evaluation_metrics.reshape_3Dto2D(doa_label)
 
             # Calculate the DCASE 2020 metrics - Location-aware detection and Class-aware localization scores
             cls_metric = SELD_evaluation_metrics.SELDMetrics(nb_classes=self.nb_classes,
@@ -145,7 +138,7 @@ class Solver(object):
 
             print(
                 'epoch_cnt: {}, time: {:0.2f}s, tr_loss: {:0.2f}, '
-                '\n\t\t DCASE2020 SCORES: ER: {:0.2f}, F: {:0.1f}, DE: {:0.1f}, DE_F:{:0.1f}, '
+                '\n\t\t DCASE2020 SCORES: SED_Error: {:0.2f}, SED_F: {:0.1f}, DOA_Error: {:0.1f}, DOA_recall:{:0.1f}, '
                 'seld_score (early stopping score): {:0.2f}, '
                 'best_seld_score: {:0.2f}, best_epoch : {}\n'.format(
                     epoch_cnt, time.time() - start, self.tr_loss[epoch_cnt],
@@ -202,21 +195,23 @@ class Solver(object):
         val_loss = 0
         for i, data in enumerate(self.val_dataloader):
             feature = data['feature'].to(self.device)
-            sed_label = data['label'][:, :, :self.nb_classes].to(self.device)
-            doa_label = data['label'][:, :, self.nb_classes:].to(self.device)
+            label = data['label'].to(self.device)
 
-            sed_out, doa_out = self.model(feature)
-            loss = self.loss_weights[0] * self.criterion1(sed_out, sed_label) + \
-                   self.loss_weights[1] * self.criterion2(doa_out, doa_label)
+            out = self.model(feature)
+            loss = self.criterion(out, label)
             val_loss += loss.item()
-
+            sed_out, doa_out = get_accdoa.get_accdoa_labels(out.cpu().detach().numpy(), self.nb_classes)
+            sed_label, doa_label = get_accdoa.get_accdoa_labels(label.cpu().detach().numpy(), self.nb_classes)
         print("Epoch [%d/%d], val loss : %.4f" % (epoch_cnt + 1, self.nb_epoch,
                                                   val_loss / len(self.val_dataloader)))
         val_loss = val_loss / len(self.val_dataloader)
         self.writer.add_scalar('Validation Loss', val_loss, epoch_cnt)
         self.writer.flush()
+
         return sed_out, doa_out, sed_label, doa_label, val_loss
 
     def test(self):
         print('\nLoading the best model and predicting results on the testing split')
         print('\tLoading testing dataset:')
+
+

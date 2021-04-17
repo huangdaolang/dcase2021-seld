@@ -107,6 +107,12 @@ class Tau_Nigens(Dataset):
                     label.append(temp)
                     temp = []
         label = np.array(label)
+
+        # accdoa
+        mask = label[:, :, :self._nb_classes]
+        mask = np.tile(mask, 3)
+        label = mask * label[:, :, self._nb_classes:]
+
         print("\tLabel shape:{}\n".format(label.shape))
         return torch.tensor(label)
 
@@ -118,7 +124,6 @@ class Tau_Nigens(Dataset):
             aug_time_data = aug.time_mask(data).unsqueeze(0)
             self.data = torch.cat((self.data, aug_time_data), 0)
             self.label = torch.cat((self.label, self.label[i].unsqueeze(0)), 0)
-
 
     def __getitem__(self, index):
         entry = {"feature": self.data[index], "label": self.label[index]}
@@ -140,6 +145,7 @@ class Tau_Nigens(Dataset):
             self._nb_ch = temp_feat.shape[1] // self._nb_mel_bins
 
         elif self._input == "raw":
+            self._nb_ch = 4
             for filename in os.listdir(self._raw_dir):
                 if self._is_eval:
                     self._filenames_list.append(filename)

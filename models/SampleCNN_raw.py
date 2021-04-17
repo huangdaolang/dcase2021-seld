@@ -117,13 +117,6 @@ class SampleCNN(nn.Module):
                    batch_first=True)
         )
 
-        self.sed = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(256, 128), batch_first=True),
-            nn.Dropout(self.params.dropout_rate),
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 14), batch_first=True),
-            nn.Sigmoid()
-        )
-
         self.doa = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(256, 128), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
@@ -132,25 +125,15 @@ class SampleCNN(nn.Module):
         )
 
     def forward(self, x):
-        # input x : 32 x 144000 x 1
-        # expected conv1d input : minibatch_size x num_channel x width
-
         x = x.view(x.shape[0], 4, -1)
-        # x : 23 x 1 x 144000
+
         out = self.conv1(x)
-        # print(out.shape)
         out = self.conv2(out)
-        # print(out.shape)
         out = self.conv3(out)
-        # print(out.shape)
         out = self.conv4(out)
-        # print(out.shape)
         out = self.conv5(out)
-        # print(out.shape)
         out = self.conv6(out)
-        # print(out.shape)
         out = self.conv7(out)
-        # print(out.shape)
         out = self.conv8(out)
         out = out.permute(0, 2, 1)
         # print(out.shape)
@@ -158,8 +141,6 @@ class SampleCNN(nn.Module):
         # print(out.shape)
         out, h = self.rnn2(out)
         # print(out.shape)
-        doa_out = self.doa(out)
+        out = self.doa(out)
 
-        sed_out = self.sed(out)
-
-        return sed_out, doa_out
+        return out

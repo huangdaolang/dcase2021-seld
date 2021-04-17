@@ -4,18 +4,17 @@ import argparse
 def get_params(output=True):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--quick_test', type=bool, default=True,
-                        help='To do quick test. Trains/test on small subset of dataset, and 2 epochs')
+    parser.add_argument('--quick_test', type=bool, default=False)
     parser.add_argument('--mode', type=str, default='dev',
                         help='dev or eval')
     parser.add_argument('--dataset', type=str, default='foa',
                         help='foa - ambisonic or mic - microphone signals')
 
-    parser.add_argument('--input', type=str, default='raw',
+    parser.add_argument('--input', type=str, default='mel',
                         help='determine which input format to use: mel or raw audio')
-    parser.add_argument('--model', type=str, default='samplecnn',
+    parser.add_argument('--model', type=str, default='crnn',
                         help='if input==mel, choose resnet or crnn')
-    parser.add_argument('--augmentation', type=bool, default=True)
+    parser.add_argument('--augmentation', type=bool, default=False)
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
                         help='Base folder containing the foa/mic and metadata folders')
@@ -28,26 +27,12 @@ def get_params(output=True):
     parser.add_argument('--dcase_dir', type=str, default='results/',
                         help='Dumps the recording-wise network output in this folder')
 
-    # feature parameters
+    # feature-based parameters
     parser.add_argument('--fs', type=int, default=24000)
     parser.add_argument('--hop_len_s', type=float, default=0.02)
     parser.add_argument('--label_hop_len_s', type=float, default=0.1)
     parser.add_argument('--max_audio_len_s', type=int, default=60)
     parser.add_argument('--nb_mel_bins', type=int, default=64)  # 96
-
-    # DNN MODEL PARAMETERS
-    parser.add_argument('--label_sequence_length', type=int, default=60,
-                        help='label length for one piece of data')
-    parser.add_argument('--nb_cnn2d_filt', type=int, default=64,
-                        help='Number of CNN nodes, constant for each layer')
-    parser.add_argument('--f_pool_size', type=list, default=[4, 4, 2],
-                        help='CNN frequency pooling, len[list] = number of CNN layers, list value = pooling per layer')
-    parser.add_argument('--rnn_size', type=list, default=[128, 128],
-                        help='RNN contents, length of list = number of layers, list value = number of nodes')
-    parser.add_argument('--fnn_size', type=list, default=[128],
-                        help='FNN contents, length of list = number of layers, list value = number of nodes')
-    parser.add_argument('--loss_weights', type=list, default=[1., 10.],
-                        help='[sed, doa] weight for scaling the DNN outputs')
 
     # model hyper-parameters
     parser.add_argument('--batch_size', type=int, default=32)
@@ -55,20 +40,18 @@ def get_params(output=True):
     parser.add_argument('--optimizer', type=str, default='adam')
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--scheduler', type=str, default='plateau')
-    parser.add_argument('--dropout_rate', type=float, default=0.3)
-    parser.add_argument('--doa_objective', type=str, default='mse',
-                        help='supports: mse, masked_mse. mse- original seld approach; masked_mse - dcase 2020 approach')
+    parser.add_argument('--dropout_rate', type=float, default=0.2)
 
     # METRIC PARAMETERS
     parser.add_argument('--lad_doa_thresh', type=int, default=20)
-
+    parser.add_argument('--label_sequence_length', type=int, default=60,
+                        help='label length for one piece of data')
     parser.add_argument('--data_in', type=tuple, default=(7, 300, 64))
     parser.add_argument('--data_out', type=list, default=[(60, 14), (60, 42)])
 
     params = parser.parse_args()
     feature_label_resolution = int(params.label_hop_len_s // params.hop_len_s)
     params.feature_sequence_length = params.label_sequence_length * feature_label_resolution
-    params.t_pool_size = [feature_label_resolution, 1, 1]  # CNN time pooling
     params.patience = int(params.nb_epochs)  # Stop training if patience is reached
 
     params.unique_classes = {

@@ -1,4 +1,3 @@
-import os
 import sys
 import feature_class
 import parameter
@@ -53,8 +52,6 @@ def main():
         data_test = data_loader.Tau_Nigens(
             params=params, split=test_splits[split_cnt], shuffle=False, is_aug=False
         )
-
-        print('Using loss weights : {}'.format(params.loss_weights))
 
         # create solver and run
         my_solver = solver.Solver(data_train, data_val, data_test, feat_cls, params, unique_name)
