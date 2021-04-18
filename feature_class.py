@@ -65,7 +65,7 @@ class FeatureClass:
         self._audio_max_len_samples = params.max_audio_len_s * self._fs
 
         self._max_feat_frames = int(np.ceil(self._audio_max_len_samples / float(self._hop_len)))
-        self._max_label_frames = int(np.ceil(self._audio_max_len_samples / float(self._label_hop_len)))
+        self._max_label_frames = int(np.ceil(self._audio_max_len_samples / float(self._label_hop_len)))  # 600
 
     # using torchaudio to load the audio file
     def load_audio(self, audio_path):

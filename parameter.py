@@ -10,9 +10,9 @@ def get_params(output=True):
     parser.add_argument('--dataset', type=str, default='foa',
                         help='foa - ambisonic or mic - microphone signals')
 
-    parser.add_argument('--input', type=str, default='mel',
+    parser.add_argument('--input', type=str, default='raw',
                         help='determine which input format to use: mel or raw audio')
-    parser.add_argument('--model', type=str, default='crnn',
+    parser.add_argument('--model', type=str, default='samplecnn',
                         help='if input==mel, choose resnet or crnn')
     parser.add_argument('--augmentation', type=bool, default=False)
 
@@ -41,6 +41,7 @@ def get_params(output=True):
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--scheduler', type=str, default='plateau')
     parser.add_argument('--dropout_rate', type=float, default=0.2)
+    parser.add_argument('--mixup', type=bool, default=True)
 
     # METRIC PARAMETERS
     parser.add_argument('--lad_doa_thresh', type=int, default=20)

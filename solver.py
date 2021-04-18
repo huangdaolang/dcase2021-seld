@@ -2,29 +2,34 @@ import torch
 from torch.utils.data import DataLoader
 from models import CRNN_mel, SampleCNN_raw, ResNet_mel
 import torch.nn as nn
+from torchsummary import summary
 import numpy as np
 import time
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CyclicLR, StepLR
 from metrics import evaluation_metrics, SELD_evaluation_metrics
 from torch.utils.tensorboard import SummaryWriter
 import os
-from utils import get_accdoa
+import utils.utils_functions as utils
 
 
 class Solver(object):
     def __init__(self, data_train, data_val, data_test, feat_cls, params, unique_name):
         self.params = params
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.use_cuda = torch.cuda.is_available()
+        self.device = torch.device("cuda" if self.use_cuda else "cpu")
 
         # model selection part
         if self.params.input == "mel":
             if self.params.model == "crnn":
                 self.model = CRNN_mel.CRNN(dropout_rate=params.dropout_rate).to(self.device)
+                summary(self.model, input_size=(7, 300, 64))
             elif self.params.model == "resnet":
                 self.model = ResNet_mel.get_resnet(data_in=params.data_in, data_out=params.data_out).to(self.device)
+                summary(self.model, input_size=(7, 300, 64))
         elif self.params.input == "raw":
             self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
+            summary(self.model, input_size=(4, 144000))
 
         self.model = self.model.double()
 
@@ -46,6 +51,8 @@ class Solver(object):
 
         self.nb_epoch = 2 if self.params.quick_test else self.params.nb_epochs
 
+        self.mixup = self.params.mixup
+        self.alpha = 1.
         # load data
         self.data_val = data_val
         self.data_train = data_train
@@ -73,7 +80,6 @@ class Solver(object):
         self.writer = SummaryWriter(os.path.join("log/", unique_name))
 
     def train(self):
-        print("Start training", self.model)
         sed_pred = None
         sed_gt = None
         doa_pred = None
@@ -86,9 +92,14 @@ class Solver(object):
                 self.optimizer.zero_grad()
                 feature = data['feature'].to(self.device)
                 label = data['label'].to(self.device)
-
-                out = self.model(feature)
-                loss = self.criterion(out, label)
+                if self.mixup:
+                    feature, label_a, label_b, lam = utils.mixup_data(feature, label, self.alpha, self.use_cuda)
+                    out = self.model(feature)
+                    loss_func = utils.mixup_criterion(label_a, label_b, lam)
+                    loss = loss_func(self.criterion, out)
+                else:
+                    out = self.model(feature)
+                    loss = self.criterion(out, label)
 
                 loss.backward()
                 self.optimizer.step()
@@ -200,8 +211,19 @@ class Solver(object):
             out = self.model(feature)
             loss = self.criterion(out, label)
             val_loss += loss.item()
-            sed_out, doa_out = get_accdoa.get_accdoa_labels(out.cpu().detach().numpy(), self.nb_classes)
-            sed_label, doa_label = get_accdoa.get_accdoa_labels(label.cpu().detach().numpy(), self.nb_classes)
+            sed_out_batch, doa_out_batch = utils.get_accdoa_labels(out.cpu().detach().numpy(), self.nb_classes)
+            sed_label_batch, doa_label_batch = utils.get_accdoa_labels(label.cpu().detach().numpy(), self.nb_classes)
+            if i == 0:
+                sed_label = sed_label_batch
+                doa_label = doa_label_batch
+                sed_out = sed_out_batch
+                doa_out = doa_out_batch
+            else:
+                sed_label = np.concatenate((sed_label, sed_label_batch), axis=0)
+                doa_label = np.concatenate((doa_label, doa_label_batch), axis=0)
+                sed_out = np.concatenate((sed_out, sed_out_batch), axis=0)
+                doa_out = np.concatenate((doa_out, doa_out_batch), axis=0)
+
         print("Epoch [%d/%d], val loss : %.4f" % (epoch_cnt + 1, self.nb_epoch,
                                                   val_loss / len(self.val_dataloader)))
         val_loss = val_loss / len(self.val_dataloader)

@@ -7,21 +7,23 @@ import random
 import torch
 import data_augmentation as aug
 
-''' data output format: n_samples x channels x sequence length x n_mel (4000 x 7 x 300 x 64)
-    label output format: list[n_samples x sequence length x 14, n_samples x sequence length x 42]
-                             [SED, DOA] 4000 x 60 x (42 and 14)'''
+''' data output format: 
+    mel: n_samples x channels x frame sequence length x n_mel (4000 x 7 x 300 x 64)
+    raw: n_samples x channels x samples (4000 x 4 x 144000)
+    label output format: n_samples x label_sequence_length x 3*classes (4000 x 60 x 42)
+'''
 
 
 class Tau_Nigens(Dataset):
-    def __init__(self, params, split, shuffle=True, is_eval=False, is_aug=False):
-        self.params = params
-        self._input = params.input
+    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_aug=False):
+        self.params = parameters
+        self._input = self.params.input
         self._is_eval = is_eval
         self._splits = np.array(split)
-        self._feature_seq_len = params.feature_sequence_length
-        self._label_seq_len = params.label_sequence_length
+        self._feature_seq_len = self.params.feature_sequence_length
+        self._label_seq_len = self.params.label_sequence_length
         self._shuffle = shuffle
-        self._feat_cls = feature_class.FeatureClass(params=params, is_eval=self._is_eval)
+        self._feat_cls = feature_class.FeatureClass(params=self.params, is_eval=self._is_eval)
         self._label_dir = self._feat_cls.get_label_dir()
         self._feat_dir = self._feat_cls.get_normalized_feat_dir()
         self._raw_dir = self._feat_cls.get_raw_dir()
@@ -40,7 +42,7 @@ class Tau_Nigens(Dataset):
 
         self._len_file = len(self._filenames_list)
 
-        # get data
+        # get data and label
         if self._input == "mel":
             self.data = self.get_all_data_mel()
         elif self._input == "raw":
@@ -67,15 +69,15 @@ class Tau_Nigens(Dataset):
         data = []
         for file in self._filenames_list:
             features_per_file = np.load(os.path.join(self._feat_dir, file))  # 3000*448 (448 is mel * channel)
-            features_per_data = []  # include on piece of data
-            for row in features_per_file:
-                features_per_data.append(row)
-                if len(features_per_data) == self._feature_seq_len:
-                    data.append(features_per_data)
-                    features_per_data = []
+            segmentation = int(len(features_per_file)//10)
+            interval = 150
+            for i in range(19):
+                data_seg = features_per_file[i*interval:i*interval+segmentation]
+                data.append(data_seg)
         data = np.array(data)
-        data = np.reshape(data, (int(self._len_file*(self._nb_frames_file/self._feature_seq_len)),
-                                 self._feature_seq_len, self._nb_mel_bins, self._nb_ch))
+        # data = np.reshape(data, (int(self._len_file*(self._nb_frames_file/self._feature_seq_len)),
+        #                          self._feature_seq_len, self._nb_mel_bins, self._nb_ch))
+        data = np.reshape(data, (-1, self._feature_seq_len, self._nb_mel_bins, self._nb_ch))
         data = np.transpose(data, (0, 3, 1, 2))  # samples, channel, width, height
         print("\tData frames shape: [n_samples, channel, width, height]:{}\n".format(data.shape))
         return torch.tensor(data, dtype=torch.double)
@@ -83,12 +85,13 @@ class Tau_Nigens(Dataset):
     def get_all_data_raw(self):
         print("\tstart to get fetch raw audio data")
         data = []
+        segmentation = 144000
+        interval = 72000
         for file in self._filenames_list:
             audio_path = os.path.join(self._raw_dir, file)
             raw, fs = self._feat_cls.load_audio(audio_path)
-            segmentation = raw.shape[0] // 10
-            for i in range(10):
-                data_seg = raw[i*segmentation:(i+1)*segmentation].numpy().T
+            for i in range(19):
+                data_seg = raw[i*interval:i*interval+segmentation].numpy().T
                 data.append(data_seg)
         data = np.array(data)
         print("\tData frames shape: [n_samples, channel, audio_samples]:{}\n".format(data.shape))
@@ -96,16 +99,31 @@ class Tau_Nigens(Dataset):
 
     def get_all_label(self):
         label = []
-        for file in self._filenames_list:
-            if self._input == "raw":
+        if self._input == "mel":
+            # for file in self._filenames_list:
+            #     temp_label = np.load(os.path.join(self._label_dir, file))
+            #     temp = []
+            #     for row in temp_label:
+            #         temp.append(row)
+            #         if len(temp) == self._label_seq_len:
+            #             label.append(temp)
+            #             temp = []
+            segmentation = 60
+            interval = 30
+            for file in self._filenames_list:
+                temp_label = np.load(os.path.join(self._label_dir, file))
+                for i in range(19):
+                    label_seg = temp_label[i * interval:i * interval + segmentation]
+                    label.append(label_seg)
+        else:
+            segmentation = 60
+            interval = 30
+            for file in self._filenames_list:
                 file = file.split('.')[0] + ".npy"
-            temp_label = np.load(os.path.join(self._label_dir, file))
-            temp = []
-            for row in temp_label:
-                temp.append(row)
-                if len(temp) == self._label_seq_len:
-                    label.append(temp)
-                    temp = []
+                temp_label = np.load(os.path.join(self._label_dir, file))
+                for i in range(19):
+                    label_seg = temp_label[i * interval:i * interval + segmentation]
+                    label.append(label_seg)
         label = np.array(label)
 
         # accdoa

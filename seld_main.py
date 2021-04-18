@@ -37,20 +37,20 @@ def main():
         )
         print("unique_name: {}\n".format(unique_name))
 
-        # Load train and validation data
+        # Load train, validation and test data
         print('Loading training dataset:')
         data_train = data_loader.Tau_Nigens(
-            params=params, split=train_splits[split_cnt], is_aug=params.augmentation
+            parameters=params, split=train_splits[split_cnt], is_aug=params.augmentation
         )
 
         print('Loading validation dataset:')
         data_val = data_loader.Tau_Nigens(
-            params=params, split=val_splits[split_cnt], is_aug=False
+            parameters=params, split=val_splits[split_cnt], is_aug=False
         )
 
         print('Loading test dataset:')
         data_test = data_loader.Tau_Nigens(
-            params=params, split=test_splits[split_cnt], shuffle=False, is_aug=False
+            parameters=params, split=test_splits[split_cnt], shuffle=False, is_aug=False
         )
 
         # create solver and run
