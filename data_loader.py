@@ -27,10 +27,10 @@ class Tau_Nigens(Dataset):
         self._feat_cls = feature_class.FeatureClass(params=self.params, is_eval=self._is_eval)
         self._label_dir = self._feat_cls.get_label_dir()
         self._feat_dir = self._feat_cls.get_normalized_feat_dir()
-        self._raw_dir = self._feat_cls.get_raw_dir()
+        self._foa_dir = self._feat_cls.get_raw_dir()
         self._augmentation = is_aug
 
-        self.data_size = 4
+        self.data_size = 6
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
 
@@ -91,11 +91,16 @@ class Tau_Nigens(Dataset):
         interval = sequence_length if self.is_val else int(sequence_length/self.data_size)
         iteration = int((1440000 - sequence_length) / interval + 1)
         for file in self._filenames_list:
-            audio_path = os.path.join(self._raw_dir, file)
-            raw, fs = self._feat_cls.load_audio(audio_path)
+            foa_path = os.path.join(self._foa_dir, file)
+            mic_path = os.path.join("../Datasets/SELD2020/mic_dev", file)
+            foa, fs = self._feat_cls.load_audio(foa_path)
+            mic, fs = self._feat_cls.load_audio(mic_path)
             for i in range(iteration):
-                data_seg = raw[i*interval: i*interval+sequence_length].numpy().T
+                foa_seg = foa[i * interval: i * interval + sequence_length].numpy().T
+                mic_seg = mic[i * interval: i * interval + sequence_length].numpy().T
+                data_seg = np.concatenate([mic_seg, foa_seg], axis=0)
                 data.append(data_seg)
+
         data = np.array(data)
         print("\tData frames shape: [n_samples, channel, audio_samples]:{}\n".format(data.shape))
         return torch.tensor(data, dtype=torch.float)
@@ -156,7 +161,7 @@ class Tau_Nigens(Dataset):
 
         elif self._input == "raw":
             self._nb_ch = 4
-            for filename in os.listdir(self._raw_dir):
+            for filename in os.listdir(self._foa_dir):
                 if self._is_eval:
                     self._filenames_list.append(filename)
                 else:

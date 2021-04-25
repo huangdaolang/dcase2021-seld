@@ -12,7 +12,8 @@ plot.switch_backend('agg')
 import torchaudio
 import torch
 import parameter
-import cls_feature_class
+
+from conformer import ConformerBlock
 import librosa.display
 
 def nCr(n, r):
@@ -146,3 +147,5 @@ if __name__ == "__main__":
 
     a = np.load("../Datasets/SELD2021/feat_label/foa_dev_label/fold1_room1_mix001.npy")
     print(a[200, :])
+
+

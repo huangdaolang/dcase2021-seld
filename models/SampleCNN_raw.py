@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import models.Time_distributed
+from conformer import ConformerBlock
 
 
 class SampleCNN(nn.Module):
@@ -11,7 +12,7 @@ class SampleCNN(nn.Module):
 
         # 144000 x 4
         self.conv1 = nn.Sequential(
-            nn.Conv1d(4, 128, kernel_size=3, stride=3, padding=0),
+            nn.Conv1d(8, 128, kernel_size=3, stride=3, padding=0),
             nn.BatchNorm1d(128),
             nn.ReLU())
         # 48000 x 128
@@ -54,25 +55,31 @@ class SampleCNN(nn.Module):
 
         # output: 65 x 128
         self.avgpool = nn.AdaptiveAvgPool1d(60)
-        self.rnn1 = nn.Sequential(
-            nn.GRU(input_size=128, bidirectional=True, hidden_size=128,
-                   batch_first=True)
-        )
+        # self.rnn1 = nn.Sequential(
+        #     nn.GRU(input_size=128, bidirectional=True, hidden_size=128,
+        #            batch_first=True)
+        # )
+        #
+        # self.rnn2 = nn.Sequential(
+        #     nn.GRU(input_size=256, bidirectional=True, hidden_size=128,
+        #            batch_first=True)
+        # )
 
-        self.rnn2 = nn.Sequential(
-            nn.GRU(input_size=256, bidirectional=True, hidden_size=128,
-                   batch_first=True)
+        self.conformer1 = nn.Sequential(
+            ConformerBlock(dim=128, dim_head=64)
         )
-
+        self.conformer2 = nn.Sequential(
+            ConformerBlock(dim=128, dim_head=64)
+        )
         self.doa = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(256, 128), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(128, 42), batch_first=True),
             nn.Tanh()
         )
 
     def forward(self, x):
-        x = x.view(x.shape[0], 4, -1)
+        x = x.view(x.shape[0], 8, -1)
 
         out = self.conv1(x)
         out = self.conv2(out)
@@ -83,8 +90,11 @@ class SampleCNN(nn.Module):
         out = self.conv7(out)
         out = self.avgpool(out)
         out = out.permute(0, 2, 1)
-        out, h = self.rnn1(out)
-        out, h = self.rnn2(out)
+        # out, h = self.rnn1(out)
+        # out, h = self.rnn2(out)
+        out = self.conformer1(out)
+        out = self.conformer2(out)
+
         out = self.doa(out)
 
         return out
