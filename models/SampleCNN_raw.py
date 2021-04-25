@@ -47,24 +47,25 @@ class SampleCNN(nn.Module):
             nn.Dropout(self.params.dropout_rate))
         # 197 x 256
         self.conv7 = nn.Sequential(
-            nn.Conv1d(256, 60, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm1d(60),
+            nn.Conv1d(256, 128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.MaxPool1d(3, stride=3))
-        # output: 65 x 60
 
+        # output: 65 x 128
+        self.avgpool = nn.AdaptiveAvgPool1d(60)
         self.rnn1 = nn.Sequential(
-            nn.GRU(input_size=65, bidirectional=True, hidden_size=64,
+            nn.GRU(input_size=128, bidirectional=True, hidden_size=128,
                    batch_first=True)
         )
 
         self.rnn2 = nn.Sequential(
-            nn.GRU(input_size=128, bidirectional=True, hidden_size=64,
+            nn.GRU(input_size=256, bidirectional=True, hidden_size=128,
                    batch_first=True)
         )
 
         self.doa = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(256, 128), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
             models.Time_distributed.TimeDistributed(nn.Linear(128, 42), batch_first=True),
             nn.Tanh()
@@ -74,24 +75,16 @@ class SampleCNN(nn.Module):
         x = x.view(x.shape[0], 4, -1)
 
         out = self.conv1(x)
-        # print(out.shape)
         out = self.conv2(out)
-        # print(out.shape)
         out = self.conv3(out)
-        # print(out.shape)
         out = self.conv4(out)
-        # print(out.shape)
         out = self.conv5(out)
-        # print(out.shape)
         out = self.conv6(out)
-        # print(out.shape)
         out = self.conv7(out)
-        # print(out.shape)
-        # out = out.permute(0, 2, 1)
+        out = self.avgpool(out)
+        out = out.permute(0, 2, 1)
         out, h = self.rnn1(out)
-        # print(out.shape)
         out, h = self.rnn2(out)
-        # print(out.shape)
         out = self.doa(out)
 
         return out

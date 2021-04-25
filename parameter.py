@@ -4,7 +4,7 @@ import argparse
 def get_params(output=True):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--quick_test', type=bool, default=False)
+    parser.add_argument('--quick_test', type=int, default=0)
     parser.add_argument('--mode', type=str, default='dev',
                         help='dev or eval')
     parser.add_argument('--dataset', type=str, default='foa',
@@ -14,7 +14,7 @@ def get_params(output=True):
                         help='determine which input format to use: mel or raw audio')
     parser.add_argument('--model', type=str, default='samplecnn',
                         help='if input==mel, choose resnet or crnn')
-    parser.add_argument('--augmentation', type=bool, default=False)
+    parser.add_argument('--augmentation', type=int, default=1)
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
                         help='Base folder containing the foa/mic and metadata folders')
@@ -41,7 +41,7 @@ def get_params(output=True):
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--scheduler', type=str, default='plateau')
     parser.add_argument('--dropout_rate', type=float, default=0.2)
-    parser.add_argument('--mixup', type=bool, default=True)
+    parser.add_argument('--mixup', type=int, default=0)
 
     # METRIC PARAMETERS
     parser.add_argument('--lad_doa_thresh', type=int, default=20)

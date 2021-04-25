@@ -10,6 +10,7 @@ from metrics import evaluation_metrics, SELD_evaluation_metrics
 from torch.utils.tensorboard import SummaryWriter
 import os
 import utils.utils_functions as utils
+from torch_audiomentations import Compose, Shift, ShuffleChannels, PolarityInversion, Gain
 
 
 class Solver(object):
@@ -31,11 +32,11 @@ class Solver(object):
             self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
             summary(self.model, input_size=(4, 144000))
 
-        self.model = self.model.double()
+        # self.model = self.model.double()
 
         # optimizer selection part
         if self.params.optimizer == 'adam':
-            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.params.lr, weight_decay=0.00001)
+            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.params.lr, weight_decay=0.0001)
         elif self.params.optimizer == 'sgd':
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.params.lr, momentum=0.9)
 
@@ -49,10 +50,26 @@ class Solver(object):
         else:
             self.scheduler = None
 
-        self.nb_epoch = 2 if self.params.quick_test else self.params.nb_epochs
+        self.nb_epoch = 2 if self.params.quick_test == 1 else self.params.nb_epochs
 
+        # mixup setup
         self.mixup = self.params.mixup
         self.alpha = 1.
+
+        # augmentation setup
+        self.augmentation = self.params.augmentation
+        if self.augmentation == 1:
+            self.apply_augmentation = Compose(
+                transforms=[
+                    Gain(
+                        min_gain_in_db=-5.0,
+                        max_gain_in_db=5.0,
+                        p=0.5,
+                    ),
+                    PolarityInversion(p=0.5)
+                ]
+            )
+
         # load data
         self.data_val = data_val
         self.data_train = data_train
@@ -92,7 +109,11 @@ class Solver(object):
                 self.optimizer.zero_grad()
                 feature = data['feature'].to(self.device)
                 label = data['label'].to(self.device)
-                if self.mixup:
+                # print("original", feature[0][1])
+                if self.augmentation == 1 and self.params.model == "samplecnn":
+                    feature = self.apply_augmentation(feature, sample_rate=24000)
+
+                if self.mixup == 1:
                     feature, label_a, label_b, lam = utils.mixup_data(feature, label, self.alpha, self.use_cuda)
                     out = self.model(feature)
                     loss_func = utils.mixup_criterion(label_a, label_b, lam)

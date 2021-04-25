@@ -40,17 +40,17 @@ def main():
         # Load train, validation and test data
         print('Loading training dataset:')
         data_train = data_loader.Tau_Nigens(
-            parameters=params, split=train_splits[split_cnt], is_aug=params.augmentation
+            parameters=params, split=train_splits[split_cnt], is_aug=params.augmentation, is_val=False
         )
 
         print('Loading validation dataset:')
         data_val = data_loader.Tau_Nigens(
-            parameters=params, split=val_splits[split_cnt], is_aug=False
+            parameters=params, split=val_splits[split_cnt], is_aug=0, is_val=True
         )
 
         print('Loading test dataset:')
         data_test = data_loader.Tau_Nigens(
-            parameters=params, split=test_splits[split_cnt], shuffle=False, is_aug=False
+            parameters=params, split=test_splits[split_cnt], shuffle=False, is_aug=0, is_val=True
         )
 
         # create solver and run

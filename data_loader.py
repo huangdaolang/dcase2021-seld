@@ -15,10 +15,11 @@ import data_augmentation as aug
 
 
 class Tau_Nigens(Dataset):
-    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_aug=False):
+    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0):
         self.params = parameters
         self._input = self.params.input
         self._is_eval = is_eval
+        self.is_val = is_val
         self._splits = np.array(split)
         self._feature_seq_len = self.params.feature_sequence_length
         self._label_seq_len = self.params.label_sequence_length
@@ -29,6 +30,7 @@ class Tau_Nigens(Dataset):
         self._raw_dir = self._feat_cls.get_raw_dir()
         self._augmentation = is_aug
 
+        self.data_size = 4
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
 
@@ -49,10 +51,10 @@ class Tau_Nigens(Dataset):
             self.data = self.get_all_data_raw()
         self.label = self.get_all_label()
 
-        if self._input == "mel" and self._augmentation:
-            self.spec_augmentation()
+        # if self._input == "mel" and self._augmentation == 1:
+        #     self.spec_augmentation()
 
-        if self.params.quick_test:
+        if self.params.quick_test == 1:
             self.data = self.data[:500]
             self.label = self.label[:500]
 
@@ -69,61 +71,49 @@ class Tau_Nigens(Dataset):
         data = []
         for file in self._filenames_list:
             features_per_file = np.load(os.path.join(self._feat_dir, file))  # 3000*448 (448 is mel * channel)
-            segmentation = int(len(features_per_file)//10)
-            interval = 150
-            for i in range(19):
-                data_seg = features_per_file[i*interval:i*interval+segmentation]
+            sequence_length = int(len(features_per_file) // 10)
+            interval = sequence_length if self.is_val else int(sequence_length/self.data_size)
+            iteration = int((3000 - sequence_length) / interval + 1)
+            for i in range(iteration):
+                data_seg = features_per_file[i*interval:i*interval+sequence_length]
                 data.append(data_seg)
+
         data = np.array(data)
-        # data = np.reshape(data, (int(self._len_file*(self._nb_frames_file/self._feature_seq_len)),
-        #                          self._feature_seq_len, self._nb_mel_bins, self._nb_ch))
         data = np.reshape(data, (-1, self._feature_seq_len, self._nb_mel_bins, self._nb_ch))
         data = np.transpose(data, (0, 3, 1, 2))  # samples, channel, width, height
         print("\tData frames shape: [n_samples, channel, width, height]:{}\n".format(data.shape))
-        return torch.tensor(data, dtype=torch.double)
+        return torch.tensor(data, dtype=torch.float)
 
     def get_all_data_raw(self):
         print("\tstart to get fetch raw audio data")
         data = []
-        segmentation = 144000
-        interval = 72000
+        sequence_length = 144000
+        interval = sequence_length if self.is_val else int(sequence_length/self.data_size)
+        iteration = int((1440000 - sequence_length) / interval + 1)
         for file in self._filenames_list:
             audio_path = os.path.join(self._raw_dir, file)
             raw, fs = self._feat_cls.load_audio(audio_path)
-            for i in range(19):
-                data_seg = raw[i*interval:i*interval+segmentation].numpy().T
+            for i in range(iteration):
+                data_seg = raw[i*interval: i*interval+sequence_length].numpy().T
                 data.append(data_seg)
         data = np.array(data)
         print("\tData frames shape: [n_samples, channel, audio_samples]:{}\n".format(data.shape))
-        return torch.tensor(data, dtype=torch.double)
+        return torch.tensor(data, dtype=torch.float)
 
     def get_all_label(self):
         label = []
-        if self._input == "mel":
-            # for file in self._filenames_list:
-            #     temp_label = np.load(os.path.join(self._label_dir, file))
-            #     temp = []
-            #     for row in temp_label:
-            #         temp.append(row)
-            #         if len(temp) == self._label_seq_len:
-            #             label.append(temp)
-            #             temp = []
-            segmentation = 60
-            interval = 30
-            for file in self._filenames_list:
-                temp_label = np.load(os.path.join(self._label_dir, file))
-                for i in range(19):
-                    label_seg = temp_label[i * interval:i * interval + segmentation]
-                    label.append(label_seg)
-        else:
-            segmentation = 60
-            interval = 30
-            for file in self._filenames_list:
+        # if is validation or test, do not contain overlap data
+        sequence_length = 60
+        interval = sequence_length if self.is_val else int(sequence_length/self.data_size)
+        iteration = int((600 - sequence_length) / interval + 1)
+        for file in self._filenames_list:
+            if self._input == "raw":
                 file = file.split('.')[0] + ".npy"
-                temp_label = np.load(os.path.join(self._label_dir, file))
-                for i in range(19):
-                    label_seg = temp_label[i * interval:i * interval + segmentation]
-                    label.append(label_seg)
+            temp_label = np.load(os.path.join(self._label_dir, file))
+            for i in range(iteration):
+                label_seg = temp_label[i * interval: i * interval + sequence_length]
+                label.append(label_seg)
+
         label = np.array(label)
 
         # accdoa
@@ -132,9 +122,11 @@ class Tau_Nigens(Dataset):
         label = mask * label[:, :, self._nb_classes:]
 
         print("\tLabel shape:{}\n".format(label.shape))
-        return torch.tensor(label)
+
+        return torch.tensor(label, dtype=torch.float)
 
     def spec_augmentation(self):
+        print("start mel-spectrogram spec-augmentation")
         for i, data in enumerate(self.data):
             aug_freq_data = aug.freq_mask(data).unsqueeze(0)
             self.data = torch.cat((self.data, aug_freq_data), 0)

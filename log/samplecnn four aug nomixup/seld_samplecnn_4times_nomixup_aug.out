@@ -1,0 +1,381 @@
+2021-04-24 08:23:02.769696: I tensorflow/stream_executor/platform/default/dso_loader.cc:49] Successfully opened dynamic library libcudart.so.10.1
+	quick_test: 0
+	mode: dev
+	dataset: foa
+	input: raw
+	model: samplecnn
+	augmentation: 1
+	dataset_dir: ../Datasets/SELD2020/
+	feat_label_dir: ../Datasets/SELD2020/feat_label/
+	model_dir: trained_model/
+	dcase_output: True
+	dcase_dir: results/
+	fs: 24000
+	hop_len_s: 0.02
+	label_hop_len_s: 0.1
+	max_audio_len_s: 60
+	nb_mel_bins: 64
+	batch_size: 16
+	nb_epochs: 50
+	optimizer: adam
+	lr: 0.001
+	scheduler: plateau
+	dropout_rate: 0.2
+	mixup: 0
+	lad_doa_thresh: 20
+	label_sequence_length: 60
+	data_in: (7, 300, 64)
+	data_out: [(60, 14), (60, 42)]
+	feature_sequence_length: 300
+	patience: 50
+	unique_classes: {'alarm': 0, 'baby': 1, 'crash': 2, 'dog': 3, 'engine': 4, 'female_scream': 5, 'female_speech': 6, 'fire': 7, 'footsteps': 8, 'knock': 9, 'male_scream': 10, 'male_speech': 11, 'phone': 12, 'piano': 13}
+unique_name: 04240820_samplecnn_foa_dev
+
+Loading training dataset:
+	start to get fetch raw audio data
+	Data frames shape: [n_samples, channel, audio_samples]:(14800, 4, 144000)
+
+	Label shape:(14800, 60, 42)
+
+	files number: 400, classes number:14
+	number of frames per file: 0, mel bins length: 64, channels number: 4
+	feat length per sequence: 300, label length per sequence: 60
+
+Loading validation dataset:
+	start to get fetch raw audio data
+	Data frames shape: [n_samples, channel, audio_samples]:(1000, 4, 144000)
+
+	Label shape:(1000, 60, 42)
+
+	files number: 100, classes number:14
+	number of frames per file: 0, mel bins length: 64, channels number: 4
+	feat length per sequence: 300, label length per sequence: 60
+
+Loading test dataset:
+	start to get fetch raw audio data
+	Data frames shape: [n_samples, channel, audio_samples]:(1000, 4, 144000)
+
+	Label shape:(1000, 60, 42)
+
+	files number: 100, classes number:14
+	number of frames per file: 0, mel bins length: 64, channels number: 4
+	feat length per sequence: 300, label length per sequence: 60
+
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+            Conv1d-1           [-1, 128, 48000]           1,664
+       BatchNorm1d-2           [-1, 128, 48000]             256
+              ReLU-3           [-1, 128, 48000]               0
+            Conv1d-4           [-1, 128, 48000]          49,280
+       BatchNorm1d-5           [-1, 128, 48000]             256
+              ReLU-6           [-1, 128, 48000]               0
+         MaxPool1d-7           [-1, 128, 16000]               0
+            Conv1d-8           [-1, 128, 16000]          49,280
+       BatchNorm1d-9           [-1, 128, 16000]             256
+             ReLU-10           [-1, 128, 16000]               0
+        MaxPool1d-11            [-1, 128, 5333]               0
+           Conv1d-12            [-1, 256, 5333]          98,560
+      BatchNorm1d-13            [-1, 256, 5333]             512
+             ReLU-14            [-1, 256, 5333]               0
+        MaxPool1d-15            [-1, 256, 1777]               0
+           Conv1d-16            [-1, 256, 1777]         196,864
+      BatchNorm1d-17            [-1, 256, 1777]             512
+             ReLU-18            [-1, 256, 1777]               0
+        MaxPool1d-19             [-1, 256, 592]               0
+           Conv1d-20             [-1, 256, 592]         196,864
+      BatchNorm1d-21             [-1, 256, 592]             512
+             ReLU-22             [-1, 256, 592]               0
+        MaxPool1d-23             [-1, 256, 197]               0
+          Dropout-24             [-1, 256, 197]               0
+           Conv1d-25             [-1, 128, 197]          98,432
+      BatchNorm1d-26             [-1, 128, 197]             256
+             ReLU-27             [-1, 128, 197]               0
+        MaxPool1d-28              [-1, 128, 65]               0
+AdaptiveAvgPool1d-29              [-1, 128, 60]               0
+              GRU-30  [[-1, 60, 256], [-1, 2, 128]]               0
+              GRU-31  [[-1, 60, 256], [-1, 2, 128]]               0
+           Linear-32                  [-1, 128]          32,896
+  TimeDistributed-33              [-1, 60, 128]               0
+          Dropout-34              [-1, 60, 128]               0
+           Linear-35                   [-1, 42]           5,418
+  TimeDistributed-36               [-1, 60, 42]               0
+             Tanh-37               [-1, 60, 42]               0
+================================================================
+Total params: 731,818
+Trainable params: 731,818
+Non-trainable params: 0
+----------------------------------------------------------------
+Input size (MB): 2.20
+Forward/backward pass size (MB): 340.34
+Params size (MB): 2.79
+Estimated Total Size (MB): 345.33
+----------------------------------------------------------------
+Epoch [1/50], train loss : 0.0227
+Epoch [1/50], val loss : 0.0207
+epoch_cnt: 0, time: 171.54s, tr_loss: 0.02, 
+		 DCASE2020 SCORES: SED_Error: 0.98, SED_F: 2.9, DOA_Error: 22.3, DOA_recall:6.0, seld_score (early stopping score): 0.76, best_seld_score: 0.76, best_epoch : 0
+
+Epoch [2/50], train loss : 0.0204
+Epoch [2/50], val loss : 0.0193
+epoch_cnt: 1, time: 163.14s, tr_loss: 0.02, 
+		 DCASE2020 SCORES: SED_Error: 0.97, SED_F: 4.9, DOA_Error: 26.7, DOA_recall:16.2, seld_score (early stopping score): 0.73, best_seld_score: 0.73, best_epoch : 1
+
+Epoch [3/50], train loss : 0.0185
+Epoch [3/50], val loss : 0.0197
+epoch_cnt: 2, time: 160.25s, tr_loss: 0.02, 
+		 DCASE2020 SCORES: SED_Error: 0.93, SED_F: 11.6, DOA_Error: 27.3, DOA_recall:28.4, seld_score (early stopping score): 0.67, best_seld_score: 0.67, best_epoch : 2
+
+Epoch [4/50], train loss : 0.0167
+Epoch [4/50], val loss : 0.0175
+epoch_cnt: 3, time: 159.87s, tr_loss: 0.02, 
+		 DCASE2020 SCORES: SED_Error: 0.90, SED_F: 16.4, DOA_Error: 22.0, DOA_recall:30.0, seld_score (early stopping score): 0.64, best_seld_score: 0.64, best_epoch : 3
+
+Epoch [5/50], train loss : 0.0153
+Epoch [5/50], val loss : 0.0167
+epoch_cnt: 4, time: 161.01s, tr_loss: 0.02, 
+		 DCASE2020 SCORES: SED_Error: 0.86, SED_F: 22.0, DOA_Error: 22.6, DOA_recall:43.7, seld_score (early stopping score): 0.58, best_seld_score: 0.58, best_epoch : 4
+
+Epoch [6/50], train loss : 0.0142
+Epoch [6/50], val loss : 0.0168
+epoch_cnt: 5, time: 161.42s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.84, SED_F: 24.4, DOA_Error: 21.4, DOA_recall:43.2, seld_score (early stopping score): 0.57, best_seld_score: 0.57, best_epoch : 5
+
+Epoch [7/50], train loss : 0.0132
+Epoch [7/50], val loss : 0.0166
+epoch_cnt: 6, time: 162.50s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.82, SED_F: 25.3, DOA_Error: 23.7, DOA_recall:48.8, seld_score (early stopping score): 0.55, best_seld_score: 0.55, best_epoch : 6
+
+Epoch [8/50], train loss : 0.0124
+Epoch [8/50], val loss : 0.0162
+epoch_cnt: 7, time: 163.39s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.84, SED_F: 22.8, DOA_Error: 24.2, DOA_recall:49.6, seld_score (early stopping score): 0.56, best_seld_score: 0.55, best_epoch : 6
+
+Epoch [9/50], train loss : 0.0115
+Epoch [9/50], val loss : 0.0161
+epoch_cnt: 8, time: 163.76s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.79, SED_F: 29.1, DOA_Error: 23.2, DOA_recall:52.3, seld_score (early stopping score): 0.53, best_seld_score: 0.53, best_epoch : 8
+
+Epoch [10/50], train loss : 0.0109
+Epoch [10/50], val loss : 0.0155
+epoch_cnt: 9, time: 163.81s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.79, SED_F: 29.7, DOA_Error: 22.9, DOA_recall:55.0, seld_score (early stopping score): 0.52, best_seld_score: 0.52, best_epoch : 9
+
+Epoch [11/50], train loss : 0.0103
+Epoch [11/50], val loss : 0.0151
+epoch_cnt: 10, time: 163.98s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.78, SED_F: 29.7, DOA_Error: 23.7, DOA_recall:58.3, seld_score (early stopping score): 0.51, best_seld_score: 0.51, best_epoch : 10
+
+Epoch [12/50], train loss : 0.0097
+Epoch [12/50], val loss : 0.0151
+epoch_cnt: 11, time: 164.67s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.76, SED_F: 32.6, DOA_Error: 22.1, DOA_recall:59.9, seld_score (early stopping score): 0.49, best_seld_score: 0.49, best_epoch : 11
+
+Epoch [13/50], train loss : 0.0092
+Epoch [13/50], val loss : 0.0153
+epoch_cnt: 12, time: 154.58s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.76, SED_F: 31.6, DOA_Error: 23.6, DOA_recall:60.5, seld_score (early stopping score): 0.49, best_seld_score: 0.49, best_epoch : 11
+
+Epoch [14/50], train loss : 0.0087
+Epoch [14/50], val loss : 0.0158
+Epoch    14: reducing learning rate of group 0 to 2.0000e-04.
+epoch_cnt: 13, time: 154.68s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.78, SED_F: 29.3, DOA_Error: 23.3, DOA_recall:57.8, seld_score (early stopping score): 0.51, best_seld_score: 0.49, best_epoch : 11
+
+Epoch [15/50], train loss : 0.0073
+Epoch [15/50], val loss : 0.0145
+epoch_cnt: 14, time: 166.15s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 36.1, DOA_Error: 21.9, DOA_recall:63.5, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 14
+
+Epoch [16/50], train loss : 0.0069
+Epoch [16/50], val loss : 0.0144
+epoch_cnt: 15, time: 166.32s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.6, DOA_Error: 21.6, DOA_recall:63.3, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 15
+
+Epoch [17/50], train loss : 0.0068
+Epoch [17/50], val loss : 0.0143
+epoch_cnt: 16, time: 166.28s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.9, DOA_Error: 21.5, DOA_recall:63.3, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 16
+
+Epoch [18/50], train loss : 0.0066
+Epoch [18/50], val loss : 0.0147
+epoch_cnt: 17, time: 155.93s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.74, SED_F: 35.0, DOA_Error: 21.7, DOA_recall:61.6, seld_score (early stopping score): 0.47, best_seld_score: 0.46, best_epoch : 16
+
+Epoch [19/50], train loss : 0.0065
+Epoch [19/50], val loss : 0.0147
+epoch_cnt: 18, time: 156.08s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 35.2, DOA_Error: 21.5, DOA_recall:62.3, seld_score (early stopping score): 0.47, best_seld_score: 0.46, best_epoch : 16
+
+Epoch [20/50], train loss : 0.0063
+Epoch [20/50], val loss : 0.0147
+Epoch    20: reducing learning rate of group 0 to 4.0000e-05.
+epoch_cnt: 19, time: 155.37s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.74, SED_F: 34.5, DOA_Error: 21.9, DOA_recall:62.5, seld_score (early stopping score): 0.47, best_seld_score: 0.46, best_epoch : 16
+
+Epoch [21/50], train loss : 0.0060
+Epoch [21/50], val loss : 0.0144
+epoch_cnt: 20, time: 155.97s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.4, DOA_Error: 21.5, DOA_recall:62.9, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 16
+
+Epoch [22/50], train loss : 0.0060
+Epoch [22/50], val loss : 0.0143
+epoch_cnt: 21, time: 165.90s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.4, DOA_Error: 21.3, DOA_recall:63.7, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 16
+
+Epoch [23/50], train loss : 0.0060
+Epoch [23/50], val loss : 0.0145
+epoch_cnt: 22, time: 145.52s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 36.0, DOA_Error: 21.4, DOA_recall:63.1, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 16
+
+Epoch [24/50], train loss : 0.0059
+Epoch [24/50], val loss : 0.0143
+epoch_cnt: 23, time: 155.46s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.7, DOA_Error: 21.4, DOA_recall:63.9, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [25/50], train loss : 0.0059
+Epoch [25/50], val loss : 0.0144
+Epoch    25: reducing learning rate of group 0 to 8.0000e-06.
+epoch_cnt: 24, time: 166.31s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.2, DOA_Error: 21.5, DOA_recall:63.4, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [26/50], train loss : 0.0058
+Epoch [26/50], val loss : 0.0142
+epoch_cnt: 25, time: 166.45s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.6, DOA_Error: 21.3, DOA_recall:63.9, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [27/50], train loss : 0.0058
+Epoch [27/50], val loss : 0.0145
+epoch_cnt: 26, time: 156.32s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.1, DOA_Error: 21.5, DOA_recall:63.4, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [28/50], train loss : 0.0058
+Epoch [28/50], val loss : 0.0144
+epoch_cnt: 27, time: 166.09s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.0, DOA_Error: 21.5, DOA_recall:63.7, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [29/50], train loss : 0.0058
+Epoch [29/50], val loss : 0.0145
+Epoch    29: reducing learning rate of group 0 to 1.6000e-06.
+epoch_cnt: 28, time: 166.69s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 35.9, DOA_Error: 21.3, DOA_recall:63.0, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [30/50], train loss : 0.0058
+Epoch [30/50], val loss : 0.0143
+epoch_cnt: 29, time: 166.06s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.0, DOA_Error: 21.5, DOA_recall:63.7, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [31/50], train loss : 0.0058
+Epoch [31/50], val loss : 0.0144
+epoch_cnt: 30, time: 165.05s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.3, DOA_Error: 21.4, DOA_recall:63.0, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [32/50], train loss : 0.0058
+Epoch [32/50], val loss : 0.0142
+epoch_cnt: 31, time: 165.37s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.6, DOA_Error: 21.3, DOA_recall:63.6, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [33/50], train loss : 0.0058
+Epoch [33/50], val loss : 0.0143
+epoch_cnt: 32, time: 165.47s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.7, DOA_Error: 21.3, DOA_recall:63.8, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [34/50], train loss : 0.0058
+Epoch [34/50], val loss : 0.0143
+epoch_cnt: 33, time: 165.56s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.9, DOA_Error: 21.1, DOA_recall:63.2, seld_score (early stopping score): 0.46, best_seld_score: 0.46, best_epoch : 23
+
+Epoch [35/50], train loss : 0.0058
+Epoch [35/50], val loss : 0.0142
+Epoch    35: reducing learning rate of group 0 to 3.2000e-07.
+epoch_cnt: 34, time: 165.60s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.71, SED_F: 37.3, DOA_Error: 21.2, DOA_recall:63.9, seld_score (early stopping score): 0.45, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [36/50], train loss : 0.0058
+Epoch [36/50], val loss : 0.0143
+epoch_cnt: 35, time: 165.52s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.4, DOA_Error: 21.3, DOA_recall:63.4, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [37/50], train loss : 0.0058
+Epoch [37/50], val loss : 0.0144
+epoch_cnt: 36, time: 165.74s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 36.1, DOA_Error: 21.4, DOA_recall:63.3, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [38/50], train loss : 0.0058
+Epoch [38/50], val loss : 0.0144
+Epoch    38: reducing learning rate of group 0 to 6.4000e-08.
+epoch_cnt: 37, time: 165.55s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.1, DOA_Error: 21.1, DOA_recall:63.3, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [39/50], train loss : 0.0058
+Epoch [39/50], val loss : 0.0144
+epoch_cnt: 38, time: 165.59s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.7, DOA_Error: 21.4, DOA_recall:63.7, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [40/50], train loss : 0.0058
+Epoch [40/50], val loss : 0.0144
+epoch_cnt: 39, time: 165.49s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.1, DOA_Error: 21.2, DOA_recall:63.0, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [41/50], train loss : 0.0058
+/home/huangd5/.local/lib/python3.8/site-packages/torchaudio/backend/utils.py:46: UserWarning: "torchaudio.USE_SOUNDFILE_LEGACY_INTERFACE" flag is deprecated and will be removed in 0.9.0. Please remove the use of flag.
+  warnings.warn(
+Epoch [41/50], val loss : 0.0145
+Epoch    41: reducing learning rate of group 0 to 1.2800e-08.
+epoch_cnt: 40, time: 165.62s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 35.7, DOA_Error: 21.1, DOA_recall:62.5, seld_score (early stopping score): 0.47, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [42/50], train loss : 0.0058
+Epoch [42/50], val loss : 0.0143
+epoch_cnt: 41, time: 165.68s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.5, DOA_Error: 21.3, DOA_recall:63.4, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [43/50], train loss : 0.0058
+Epoch [43/50], val loss : 0.0143
+epoch_cnt: 42, time: 165.72s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.8, DOA_Error: 21.1, DOA_recall:63.5, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [44/50], train loss : 0.0058
+Epoch [44/50], val loss : 0.0143
+Epoch    44: reducing learning rate of group 0 to 2.5600e-09.
+epoch_cnt: 43, time: 165.83s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.4, DOA_Error: 21.3, DOA_recall:63.4, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [45/50], train loss : 0.0058
+Epoch [45/50], val loss : 0.0146
+epoch_cnt: 44, time: 165.72s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 35.9, DOA_Error: 21.4, DOA_recall:62.9, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [46/50], train loss : 0.0058
+Epoch [46/50], val loss : 0.0144
+epoch_cnt: 45, time: 165.67s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.3, DOA_Error: 21.3, DOA_recall:63.4, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [47/50], train loss : 0.0058
+Epoch [47/50], val loss : 0.0143
+epoch_cnt: 46, time: 165.69s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.5, DOA_Error: 21.1, DOA_recall:63.3, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [48/50], train loss : 0.0058
+Epoch [48/50], val loss : 0.0145
+epoch_cnt: 47, time: 165.80s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.73, SED_F: 35.7, DOA_Error: 21.6, DOA_recall:63.1, seld_score (early stopping score): 0.47, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [49/50], train loss : 0.0058
+Epoch [49/50], val loss : 0.0146
+epoch_cnt: 48, time: 165.78s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.1, DOA_Error: 21.4, DOA_recall:62.5, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+Epoch [50/50], train loss : 0.0058
+Epoch [50/50], val loss : 0.0144
+epoch_cnt: 49, time: 165.74s, tr_loss: 0.01, 
+		 DCASE2020 SCORES: SED_Error: 0.72, SED_F: 36.7, DOA_Error: 21.2, DOA_recall:63.3, seld_score (early stopping score): 0.46, best_seld_score: 0.45, best_epoch : 34
+
+
+Results on validation split:
+	Saved model for the best_epoch: 34
+	SELD_score (early stopping score) : 0.4549681342228947
+
+	DCASE2021 scores
+	Class-aware localization scores: DOA_error: 21.2, F-score: 63.9
+	Location-aware detection scores: Error rate: 0.71, F-score: 37.3
