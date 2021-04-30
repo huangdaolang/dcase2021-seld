@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from models import CRNN_mel, SampleCNN_raw, ResNet_mel
+from models import CRNN_mel, SampleCNN_raw, ResNet_mel, ReSE_SampleCNN
 import torch.nn as nn
 from torchsummary import summary
 import numpy as np
@@ -29,8 +29,11 @@ class Solver(object):
                 self.model = ResNet_mel.get_resnet(data_in=params.data_in, data_out=params.data_out).to(self.device)
                 summary(self.model, input_size=(7, 300, 64))
         elif self.params.input == "raw":
-            self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
-            summary(self.model, input_size=(4, 144000))
+            if self.params.model == "rese":
+                self.model = ReSE_SampleCNN.ReSE_SampleCNN(params, ReSE_SampleCNN.Basic_Block).to(self.device)
+            elif self.params.model == "samplecnn":
+                self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
+            summary(self.model, input_size=(8, 144000))
 
         # self.model = self.model.double()
 
@@ -110,7 +113,7 @@ class Solver(object):
                 feature = data['feature'].to(self.device)
                 label = data['label'].to(self.device)
                 # print("original", feature[0][1])
-                if self.augmentation == 1 and self.params.model == "samplecnn":
+                if self.augmentation == 1 and self.params.input == "raw":
                     feature = self.apply_augmentation(feature, sample_rate=24000)
 
                 if self.mixup == 1:
