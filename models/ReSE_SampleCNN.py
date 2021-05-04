@@ -20,9 +20,6 @@ class Basic_Block(nn.Module):
 
         self.conv1 = nn.Conv1d(inplanes, planes, kernel_size=3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm1d(planes)
-
-        self.conv2 = nn.Conv1d(planes, planes, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm1d(planes)
         self.relu = nn.ReLU(inplace=True)
 
         self.max_pooling = nn.MaxPool1d(3, stride=3)
@@ -43,10 +40,6 @@ class Basic_Block(nn.Module):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
         out = self.relu(out)
 
         out1 = self.global_pool(out)
@@ -88,9 +81,6 @@ class ReSE_SampleCNN(nn.Module):
         self.conformer2 = nn.Sequential(
             ConformerBlock(dim=128, dim_head=64)
         )
-        self.conformer3 = nn.Sequential(
-            ConformerBlock(dim=128, dim_head=64)
-        )
 
         self.doa = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
@@ -115,7 +105,6 @@ class ReSE_SampleCNN(nn.Module):
         out = out.permute(0, 2, 1)
         out = self.conformer1(out)
         out = self.conformer2(out)
-        # out = self.conformer3(out)
         out = self.doa(out)
 
         return out

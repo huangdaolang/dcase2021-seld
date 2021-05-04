@@ -15,7 +15,7 @@ import data_augmentation as aug
 
 
 class Tau_Nigens(Dataset):
-    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0):
+    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0, is_acs=0):
         self.params = parameters
         self._input = self.params.input
         self._is_eval = is_eval
@@ -29,8 +29,9 @@ class Tau_Nigens(Dataset):
         self._feat_dir = self._feat_cls.get_normalized_feat_dir()
         self._foa_dir = self._feat_cls.get_raw_dir()
         self._augmentation = is_aug
+        self._acs = is_acs
 
-        self.data_size = 6
+        self.data_size = 1
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
 
@@ -50,6 +51,13 @@ class Tau_Nigens(Dataset):
         elif self._input == "raw":
             self.data = self.get_all_data_raw()
         self.label = self.get_all_label()
+
+        if self._acs == 1 and self.is_val is False:
+            self.acs_data, self.acs_label = self.get_acs_data()
+            self.data = torch.cat((self.data, self.acs_data), dim=0)
+            self.label = torch.cat((self.label, self.acs_label), dim=0)
+            print("\tFinal Data frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
+            print("\tFinal Label shape:{}\n".format(self.label.shape))
 
         # if self._input == "mel" and self._augmentation == 1:
         #     self.spec_augmentation()
@@ -130,6 +138,44 @@ class Tau_Nigens(Dataset):
 
         return torch.tensor(label, dtype=torch.float)
 
+    def get_acs_data(self):
+        print("\tstart fetch ACS data")
+        acs_data = []
+        acs_label = []
+        for indicator in range(7):
+            foa = np.load("../Datasets/SELD2020/ACS_foa_{}.npy".format(indicator))
+            mic = np.load("../Datasets/SELD2020/ACS_mic_{}.npy".format(indicator))
+            label = np.load("../Datasets/SELD2020/ACS_label_{}.npy".format(indicator))
+
+            label_sequence_length = 60
+            raw_sequence_length = 144000
+            label_interval = label_sequence_length if self.is_val else int(label_sequence_length / self.data_size)
+            raw_interval = raw_sequence_length if self.is_val else int(raw_sequence_length / self.data_size)
+            iteration = int((600 - label_sequence_length) / label_interval + 1)
+            for index in range(len(label)):
+                foa_temp = foa[index].T
+                mic_temp = mic[index].T
+                for i in range(iteration):
+                    label_seg = label[index][i * label_interval: i * label_interval + label_sequence_length]
+                    foa_seg = foa_temp[i * raw_interval: i * raw_interval + raw_sequence_length].T
+                    mic_seg = mic_temp[i * raw_interval: i * raw_interval + raw_sequence_length].T
+                    data_seg = np.concatenate([mic_seg, foa_seg], axis=0)
+                    acs_label.append(label_seg)
+                    acs_data.append(data_seg)
+
+        acs_label = np.array(acs_label)
+        acs_data = np.array(acs_data)
+
+        # accdoa
+        mask = acs_label[:, :, :self._nb_classes]
+        mask = np.tile(mask, 3)
+        acs_label = mask * acs_label[:, :, self._nb_classes:]
+
+        print("\tACS Label shape:{}\n".format(acs_label.shape))
+        print("\tACS data shape:{}\n".format(acs_data.shape))
+
+        return torch.tensor(acs_data, dtype=torch.float), torch.tensor(acs_label, dtype=torch.float)
+
     def spec_augmentation(self):
         print("start mel-spectrogram spec-augmentation")
         for i, data in enumerate(self.data):
@@ -160,7 +206,7 @@ class Tau_Nigens(Dataset):
             self._nb_ch = temp_feat.shape[1] // self._nb_mel_bins
 
         elif self._input == "raw":
-            self._nb_ch = 4
+            self._nb_ch = 8
             for filename in os.listdir(self._foa_dir):
                 if self._is_eval:
                     self._filenames_list.append(filename)

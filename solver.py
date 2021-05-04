@@ -10,7 +10,7 @@ from metrics import evaluation_metrics, SELD_evaluation_metrics
 from torch.utils.tensorboard import SummaryWriter
 import os
 import utils.utils_functions as utils
-from torch_audiomentations import Compose, Shift, ShuffleChannels, PolarityInversion, Gain
+from torch_audiomentations import Compose, Shift, PolarityInversion, Gain
 
 
 class Solver(object):
