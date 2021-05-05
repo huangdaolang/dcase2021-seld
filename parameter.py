@@ -16,6 +16,7 @@ def get_params(output=True):
                         help='if input==mel, choose resnet or crnn')
     parser.add_argument('--augmentation', type=int, default=1)
     parser.add_argument('--acs', type=int, default=1)
+    parser.add_argument('--direct_read', type=int, default=0)
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
                         help='Base folder containing the foa/mic and metadata folders')

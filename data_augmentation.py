@@ -1,12 +1,8 @@
 from collections import namedtuple
 import random
 import matplotlib.pyplot as plt
-import torch
-import torchaudio
-from torchaudio import transforms
 import parameter
-import data_loader
-import raw_feature_class
+import feature_class
 import os
 import numpy as np
 
@@ -55,10 +51,11 @@ def time_mask(spec, T=30, replace_with_zero=True):
     return cloned
 
 
-def get_filenames_list():
+# the following is the method to do the ACS
+def get_filenames_list(split):
     filenames = []
     for filename in os.listdir("../Datasets/SELD2020/foa_dev"):
-        if int(filename[4]) in [3, 4, 5, 6]:  # check which split the file belongs to
+        if int(filename[4]) in split:  # check which split the file belongs to
             filenames.append(filename)
 
     return filenames
@@ -115,94 +112,81 @@ def audio_channel_swapping(indicator, feat_cls, foa_data, mic_data, filenames_li
         save_file = file.split('.')[0]
         foa = foa_data[i]
         mic = mic_data[i]
-
+        foa_new = None
+        mic_new = None
+        desc_file_polar = None
         if indicator == 0:
-            foa_0 = foa
-            mic_0 = mic
-            desc_file_polar_0 = load_output_format_file(label_file, [1, 0], 1)
-            desc_file_0 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_0)
-            label_mat_0 = feat_cls.get_labels_for_file(desc_file_0)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_0)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_0)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_0)
+            foa_new = foa
+            mic_new = mic
+            desc_file_polar = load_output_format_file(label_file, [1, 0], 1)
+        elif indicator == 1:
+            foa_new = np.stack((foa[0], -foa[3], -foa[2], foa[1]))
+            mic_new = np.stack((mic[1], mic[3], mic[0], mic[2]))
+            desc_file_polar = load_output_format_file(label_file, [1, -90], -1)
+        elif indicator == 2:
+            foa_new = np.stack((foa[0], -foa[3], foa[2], -foa[1]))
+            mic_new = np.stack((mic[3], mic[1], mic[2], mic[0]))
+            desc_file_polar = load_output_format_file(label_file, [-1, -90], 1)
+        elif indicator == 3:
+            foa_new = np.stack((foa[0], -foa[1], -foa[2], foa[3]))
+            mic_new = np.stack((mic[1], mic[0], mic[3], mic[2]))
+            desc_file_polar = load_output_format_file(label_file, [-1, 0], -1)
+        elif indicator == 4:
+            foa_new = np.stack((foa[0], foa[3], -foa[2], -foa[1]))
+            mic_new = np.stack((mic[2], mic[0], mic[3], mic[1]))
+            desc_file_polar = load_output_format_file(label_file, [1, 90], -1)
+        elif indicator == 5:
+            foa_new = np.stack((foa[0], foa[3], foa[2], foa[1]))
+            mic_new = np.stack((mic[0], mic[2], mic[1], mic[3]))
+            desc_file_polar = load_output_format_file(label_file, [-1, 90], 1)
+        elif indicator == 6:
+            foa_new = np.stack((foa[0], -foa[1], foa[2], -foa[3]))
+            mic_new = np.stack((mic[3], mic[2], mic[1], mic[0]))
+            desc_file_polar = load_output_format_file(label_file, [1, 180], 1)
+        elif indicator == 7:
+            foa_new = np.stack((foa[0], foa[1], -foa[2], -foa[3]))
+            mic_new = np.stack((mic[2], mic[3], mic[0], mic[1]))
+            desc_file_polar = load_output_format_file(label_file, [-1, 180], -1)
 
-        if indicator == 1:
-            foa_1 = np.stack((foa[0], -foa[3], -foa[2], foa[1]))
-            mic_1 = np.stack((mic[1], mic[3], mic[0], mic[2]))
-            desc_file_polar_1 = load_output_format_file(label_file, [1, -90], -1)
-            desc_file_1 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_1)
-            label_mat_1 = feat_cls.get_labels_for_file(desc_file_1)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_1)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_1)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_1)
+        desc_file = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar)
+        label = feat_cls.get_labels_for_file(desc_file)
 
-        if indicator == 2:
-            foa_2 = np.stack((foa[0], -foa[3], foa[2], -foa[1]))
-            mic_2 = np.stack((mic[3], mic[1], mic[2], mic[0]))
-            desc_file_polar_2 = load_output_format_file(label_file, [-1, -90], 1)
-            desc_file_2 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_2)
-            label_mat_2 = feat_cls.get_labels_for_file(desc_file_2)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_2)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_2)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_2)
+        label_sequence_length = 60
+        raw_sequence_length = 144000
+        label_interval = label_sequence_length
+        raw_interval = raw_sequence_length
+        iteration = int((600 - label_sequence_length) / label_interval + 1)
 
-        if indicator == 3:
-            foa_3 = np.stack((foa[0], -foa[1], -foa[2], foa[3]))
-            mic_3 = np.stack((mic[1], mic[0], mic[3], mic[2]))
-            desc_file_polar_3 = load_output_format_file(label_file, [-1, 0], -1)
-            desc_file_3 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_3)
-            label_mat_3 = feat_cls.get_labels_for_file(desc_file_3)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_3)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_3)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_3)
-
-        if indicator == 4:
-            foa_4 = np.stack((foa[0], foa[3], -foa[2], -foa[1]))
-            mic_4 = np.stack((mic[2], mic[0], mic[3], mic[1]))
-            desc_file_polar_4 = load_output_format_file(label_file, [1, 90], -1)
-            desc_file_4 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_4)
-            label_mat_4 = feat_cls.get_labels_for_file(desc_file_4)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_4)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_4)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_4)
-
-        if indicator == 5:
-            foa_5 = np.stack((foa[0], foa[3], foa[2], foa[1]))
-            mic_5 = np.stack((mic[0], mic[2], mic[1], mic[3]))
-            desc_file_polar_5 = load_output_format_file(label_file, [-1, 90], 1)
-            desc_file_5 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_5)
-            label_mat_5 = feat_cls.get_labels_for_file(desc_file_5)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_5)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_5)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_5)
-
-        if indicator == 6:
-            foa_6 = np.stack((foa[0], -foa[1], foa[2], -foa[3]))
-            mic_6 = np.stack((mic[3], mic[2], mic[1], mic[0]))
-            desc_file_polar_6 = load_output_format_file(label_file, [1, 180], 1)
-            desc_file_6 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_6)
-            label_mat_6 = feat_cls.get_labels_for_file(desc_file_6)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_6)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_6)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_6)
-
-        if indicator == 7:
-            foa_7 = np.stack((foa[0], foa[1], -foa[2], -foa[3]))
-            mic_7 = np.stack((mic[2], mic[3], mic[0], mic[1]))
-            desc_file_polar_7 = load_output_format_file(label_file, [-1, 180], -1)
-            desc_file_7 = feat_cls.convert_output_format_polar_to_cartesian(desc_file_polar_7)
-            label_mat_7 = feat_cls.get_labels_for_file(desc_file_7)
-            np.save("../Datasets/SELD2020/foa_dev_acs/{}_{}.npy".format(save_file, indicator), foa_7)
-            np.save("../Datasets/SELD2020/mic_dev_acs/{}_{}.npy".format(save_file, indicator), mic_7)
-            np.save("../Datasets/SELD2020/label_dev_acs/{}_{}.npy".format(save_file, indicator), label_mat_7)
+        foa_temp = foa_new.T
+        mic_temp = mic_new.T
+        for j in range(iteration):
+            label_seg = label[j * label_interval: j * label_interval + label_sequence_length]
+            foa_seg = foa_temp[j * raw_interval: j * raw_interval + raw_sequence_length].T
+            mic_seg = mic_temp[j * raw_interval: j * raw_interval + raw_sequence_length].T
+            data_seg = np.concatenate([mic_seg, foa_seg], axis=0)
+            np.save("../Datasets/SELD2020/foa_mic_acs/{}_{}_seg{}.npy".format(save_file, indicator, j), data_seg)
+            np.save("../Datasets/SELD2020/label_acs/{}_{}_seg{}.npy".format(save_file, indicator, j), label_seg)
 
 
 if __name__ == "__main__":
     params = parameter.get_params(output=False)
-    feat_cls = raw_feature_class.FeatureClass(params, is_eval=False)
-    filenames_list = get_filenames_list()
-    foa_data, mic_data, filenames_list = get_all_raw_data(feat_cls, filenames_list)
+    feat_cls = feature_class.FeatureClass(params, is_eval=False)
 
+    # val
+    filenames_list = get_filenames_list([1])
+    foa_data, mic_data, filenames_list = get_all_raw_data(feat_cls, filenames_list)
+    audio_channel_swapping(0, feat_cls, foa_data, mic_data, filenames_list)
+
+    # test
+    filenames_list = get_filenames_list([2])
+    foa_data, mic_data, filenames_list = get_all_raw_data(feat_cls, filenames_list)
+    audio_channel_swapping(0, feat_cls, foa_data, mic_data, filenames_list)
+
+    # train
+    filenames_list = get_filenames_list([3, 4, 5, 6])
+    foa_data, mic_data, filenames_list = get_all_raw_data(feat_cls, filenames_list)
     for indicator in range(8):
         audio_channel_swapping(indicator, feat_cls, foa_data, mic_data, filenames_list)
+
+
 

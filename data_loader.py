@@ -14,7 +14,7 @@ import data_augmentation as aug
 '''
 
 
-class Tau_Nigens(Dataset):
+class Tau_Nigens_mel(Dataset):
     def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0, is_acs=0):
         self.params = parameters
         self._input = self.params.input
@@ -31,7 +31,7 @@ class Tau_Nigens(Dataset):
         self._augmentation = is_aug
         self._acs = is_acs
 
-        self.data_size = 1
+        self.data_size = 6
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
 
@@ -224,6 +224,104 @@ class Tau_Nigens(Dataset):
         return self._filenames_list
 
 
+class Tau_Nigens_raw(Dataset):
+    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0, is_acs=0):
+        self.params = parameters
+        self._is_eval = is_eval
+        self.is_val = is_val
+        self._splits = np.array(split)
+        self._label_seq_len = self.params.label_sequence_length
+        self._shuffle = shuffle
+        self._feat_cls = feature_class.FeatureClass(params=self.params, is_eval=self._is_eval)
+        self.label_dir = "../Datasets/SELD2020/label_acs"
+        self.data_dir = "../Datasets/SELD2020/foa_mic_acs"
+        self._augmentation = is_aug
+        self._acs = is_acs
+        self.direct_read = self.params.direct_read
+        self.data_size = 1
+        self.nb_classes = 14
+
+        self.filenames_list = list()
+        self._nb_frames_file = 0
+        self.nb_ch = None
+        self.get_filenames_list()  # update above parameters
+
+        if self.direct_read == 0:
+            self.data = self.get_all_data(self.filenames_list)
+            self.label = self.get_all_label(self.filenames_list)
+            print("\tFinal Data frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
+            print("\tFinal Label shape:{}\n".format(self.label.shape))
+        self._len_file = len(self.filenames_list)
+
+        print(
+            '\tfiles number: {}, classes number:{}\n'
+            '\tchannels number: {}, label length per sequence: {}\n'.format(
+                len(self.filenames_list),  self.nb_classes, self.nb_ch,
+                self._label_seq_len))
+
+    def get_data(self, file):
+        file = os.path.join(self.data_dir, file)
+        data = np.load(file)
+        return torch.tensor(data, dtype=torch.float)
+
+    def get_label(self, file):
+        file = os.path.join(self.label_dir, file)
+        label = np.load(file)
+
+        # accdoa
+        mask = label[:, :self.nb_classes]
+        mask = np.tile(mask, 3)
+        label = mask * label[:, self.nb_classes:]
+
+        return torch.tensor(label, dtype=torch.float)
+
+    def get_all_data(self, filename_list):
+        data = []
+        for file in filename_list:
+            file = os.path.join(self.data_dir, file)
+            data.append(np.load(file))
+        data = np.array(data)
+        return torch.tensor(data, dtype=torch.float)
+
+    def get_all_label(self, filename_list):
+        label = []
+        for file in filename_list:
+            file = os.path.join(self.label_dir, file)
+            label.append(np.load(file))
+        label = np.array(label)
+        mask = label[:, :, :self.nb_classes]
+        mask = np.tile(mask, 3)
+        label = mask * label[:, :, self.nb_classes:]
+        return torch.tensor(label, dtype=torch.float)
+
+    def __getitem__(self, index):
+        if self.direct_read == 1:
+            file = self.filenames_list[index]
+            entry = {"feature": self.get_data(file), "label": self.get_label(file)}
+            return entry
+        else:
+            entry = {"feature": self.data[index], "label": self.label[index]}
+            return entry
+
+    def __len__(self):
+        return self._len_file
+
+    def get_filenames_list(self):
+        self.nb_ch = 8
+        for filename in os.listdir(self.data_dir):
+            if self._is_eval:
+                self.filenames_list.append(filename)
+            else:
+                if int(filename[4]) in self._splits and int(filename[-10]) in [0, 1, 2, 3, 4, 5, 6, 7]:  # check which split the file belongs to
+                    self.filenames_list.append(filename)
+
+    def get_nb_classes(self):
+        return self.nb_classes
+
+    def get_filelist(self):
+        return self.filenames_list
+
+
 if __name__ == "__main__":
     params = parameter.get_params()
-    dataset = Tau_Nigens(params, split=[3, 4, 5, 6])
+    dataset = Tau_Nigens_raw(params, split=[3,4,5,6])

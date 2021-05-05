@@ -35,8 +35,6 @@ class Solver(object):
                 self.model = SampleCNN_raw.SampleCNN(params).to(self.device)
             summary(self.model, input_size=(8, 144000))
 
-        # self.model = self.model.double()
-
         # optimizer selection part
         if self.params.optimizer == 'adam':
             self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.params.lr, weight_decay=0.0001)
@@ -112,7 +110,6 @@ class Solver(object):
                 self.optimizer.zero_grad()
                 feature = data['feature'].to(self.device)
                 label = data['label'].to(self.device)
-                # print("original", feature[0][1])
                 if self.augmentation == 1 and self.params.input == "raw":
                     feature = self.apply_augmentation(feature, sample_rate=24000)
 
