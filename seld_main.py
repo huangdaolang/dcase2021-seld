@@ -39,35 +39,19 @@ def main():
 
         # Load train, validation and test data
         print('Loading training dataset:')
-        if params.input == 'raw':
-            data_train = data_loader.Tau_Nigens_raw(
-                parameters=params, split=train_splits[split_cnt], is_aug=params.augmentation, is_val=False, is_acs=params.acs
-            )
+        data_train = data_loader.Tau_Nigens(
+            parameters=params, split=train_splits[split_cnt], is_aug=params.augmentation, is_val=False
+        )
 
-            print('Loading validation dataset:')
-            data_val = data_loader.Tau_Nigens_raw(
-                parameters=params, split=val_splits[split_cnt], is_aug=0, is_val=True, is_acs=0
-            )
+        print('Loading validation dataset:')
+        data_val = data_loader.Tau_Nigens(
+            parameters=params, split=val_splits[split_cnt], is_aug=0, is_val=True
+        )
 
-            print('Loading test dataset:')
-            data_test = data_loader.Tau_Nigens_raw(
-                parameters=params, split=test_splits[split_cnt], shuffle=False, is_aug=0, is_val=True, is_acs=0
-            )
-        else:
-            data_train = data_loader.Tau_Nigens_mel(
-                parameters=params, split=train_splits[split_cnt], is_aug=params.augmentation, is_val=False,
-                is_acs=params.acs
-            )
-
-            print('Loading validation dataset:')
-            data_val = data_loader.Tau_Nigens_mel(
-                parameters=params, split=val_splits[split_cnt], is_aug=0, is_val=True, is_acs=0
-            )
-
-            print('Loading test dataset:')
-            data_test = data_loader.Tau_Nigens_mel(
-                parameters=params, split=test_splits[split_cnt], shuffle=False, is_aug=0, is_val=True, is_acs=0
-            )
+        print('Loading test dataset:')
+        data_test = data_loader.Tau_Nigens(
+            parameters=params, split=test_splits[split_cnt], shuffle=False, is_aug=0, is_val=True
+        )
 
         # create solver and run
         my_solver = solver.Solver(data_train, data_val, data_test, feat_cls, params, unique_name)

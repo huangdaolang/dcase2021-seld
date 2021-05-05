@@ -15,7 +15,6 @@ def get_params(output=True):
     parser.add_argument('--model', type=str, default='samplecnn',
                         help='if input==mel, choose resnet or crnn')
     parser.add_argument('--augmentation', type=int, default=1)
-    parser.add_argument('--acs', type=int, default=1)
     parser.add_argument('--direct_read', type=int, default=0)
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
@@ -34,7 +33,7 @@ def get_params(output=True):
     parser.add_argument('--hop_len_s', type=float, default=0.02)
     parser.add_argument('--label_hop_len_s', type=float, default=0.1)
     parser.add_argument('--max_audio_len_s', type=int, default=60)
-    parser.add_argument('--nb_mel_bins', type=int, default=64)  # 96
+    parser.add_argument('--nb_mel_bins', type=int, default=64)
 
     # model hyper-parameters
     parser.add_argument('--batch_size', type=int, default=32)

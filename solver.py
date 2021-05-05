@@ -11,12 +11,13 @@ from torch.utils.tensorboard import SummaryWriter
 import os
 import utils.utils_functions as utils
 from torch_audiomentations import Compose, Shift, PolarityInversion, Gain
+from transforms import Swap_Channel
 
 
 class Solver(object):
     def __init__(self, data_train, data_val, data_test, feat_cls, params, unique_name):
         self.params = params
-
+        self.feat_cls = feat_cls
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
 
@@ -59,15 +60,18 @@ class Solver(object):
 
         # augmentation setup
         self.augmentation = self.params.augmentation
+        self.swap_channel = Swap_Channel()
         if self.augmentation == 1:
             self.apply_augmentation = Compose(
                 transforms=[
-                    Gain(
-                        min_gain_in_db=-5.0,
-                        max_gain_in_db=5.0,
-                        p=0.5,
-                    ),
-                    PolarityInversion(p=0.5)
+                    # Gain(
+                    #     min_gain_in_db=-5.0,
+                    #     max_gain_in_db=5.0,
+                    #     p=0.5,
+                    # ),
+                    PolarityInversion(p=0.5),
+
+                    # shift
                 ]
             )
 
@@ -90,7 +94,7 @@ class Solver(object):
         self.early_stop_metric = np.zeros(self.nb_epoch)
         self.tr_loss = np.zeros(self.nb_epoch)
         self.seld_metric = np.zeros((self.nb_epoch, 4))
-        self.feat_cls = feat_cls
+
         self.lad_doa_thresh = self.params.lad_doa_thresh
 
         self.avg_scores_val = []
@@ -111,6 +115,9 @@ class Solver(object):
                 feature = data['feature'].to(self.device)
                 label = data['label'].to(self.device)
                 if self.augmentation == 1 and self.params.input == "raw":
+
+                    feature, label = self.swap_channel(feature, label)
+
                     feature = self.apply_augmentation(feature, sample_rate=24000)
 
                 if self.mixup == 1:
