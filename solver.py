@@ -12,6 +12,7 @@ import os
 import utils.utils_functions as utils
 from torch_audiomentations import Compose, Shift, PolarityInversion, Gain
 from transforms import Swap_Channel
+import random
 
 
 class Solver(object):
@@ -72,6 +73,7 @@ class Solver(object):
                     PolarityInversion(p=0.5),
 
                     # shift
+                    Shift(min_shift=-10, max_shift=10, shift_unit='samples')
                 ]
             )
 
@@ -112,14 +114,19 @@ class Solver(object):
             train_loss = 0
             for i, data in enumerate(self.train_dataloader):
                 self.optimizer.zero_grad()
+
                 feature = data['feature'].to(self.device)
                 label = data['label'].to(self.device)
+
+                # data augmentation
                 if self.augmentation == 1 and self.params.input == "raw":
-
-                    feature, label = self.swap_channel(feature, label)
-
+                    # p = random.random()
+                    # feature, label = self.swap_channel(feature, label, p)
+                    # feature = feature.to(self.device)
+                    # label = label.to(self.device)
                     feature = self.apply_augmentation(feature, sample_rate=24000)
 
+                # mixup
                 if self.mixup == 1:
                     feature, label_a, label_b, lam = utils.mixup_data(feature, label, self.alpha, self.use_cuda)
                     out = self.model(feature)
@@ -138,6 +145,7 @@ class Solver(object):
 
             self.writer.add_scalar('Train Loss', self.tr_loss[epoch_cnt], epoch_cnt)
             self.writer.flush()
+
             # validate
             sed_out, doa_out, sed_label, doa_label, val_loss = self.validation(epoch_cnt)
             if self.params.scheduler == 'plateau':

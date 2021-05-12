@@ -67,26 +67,29 @@ class ReSE_SampleCNN(nn.Module):
             nn.ReLU())
 
         self.conv2 = block(128, 128)
-        self.conv3 = block(128, 128)
-        self.conv4 = block(128, 256)
-        self.conv5 = block(256, 256)
-        self.conv6 = block(256, 256)
-        self.conv7 = block(256, 128)
+        self.conv3 = block(128, 256)
+        self.conv4 = block(256, 512)
+        self.conv5 = block(512, 512)
+        self.conv6 = block(512, 256)
+        self.conv7 = block(256, 256)
 
         self.avgpool = nn.AdaptiveAvgPool1d(60)
 
         self.conformer1 = nn.Sequential(
-            ConformerBlock(dim=128, dim_head=64)
+            ConformerBlock(dim=256, dim_head=128)
         )
         self.conformer2 = nn.Sequential(
-            ConformerBlock(dim=128, dim_head=64)
+            ConformerBlock(dim=256, dim_head=128)
+        )
+        self.conformer3 = nn.Sequential(
+            ConformerBlock(dim=256, dim_head=128)
         )
 
         self.doa = nn.Sequential(
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(256, 128), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 42), batch_first=True),
-            nn.Tanh()
+            models.Time_distributed.TimeDistributed(nn.Linear(128, 42), batch_first=True)
+            # nn.Tanh()
         )
 
     def forward(self, x):
@@ -105,6 +108,7 @@ class ReSE_SampleCNN(nn.Module):
         out = out.permute(0, 2, 1)
         out = self.conformer1(out)
         out = self.conformer2(out)
+        out = self.conformer3(out)
         out = self.doa(out)
 
         return out

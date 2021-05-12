@@ -29,7 +29,7 @@ class Tau_Nigens(Dataset):
         self._foa_dir = self._feat_cls.get_raw_dir()
         self._augmentation = is_aug
 
-        self.data_size = 1
+        self.data_size = 6
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
 
@@ -120,9 +120,7 @@ class Tau_Nigens(Dataset):
         # accdoa
         mask = label[:, :, :self._nb_classes]
         mask = np.tile(mask, 3)
-        print("original", label[:, :, self._nb_classes:])
         label = mask * label[:, :, self._nb_classes:]
-        print("after", label)
         print("\tLabel shape:{}\n".format(label.shape))
 
         return torch.tensor(label, dtype=torch.float)
@@ -176,7 +174,7 @@ class Tau_Nigens(Dataset):
 
 
 class Tau_Nigens_raw(Dataset):
-    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0, is_acs=0):
+    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0):
         self.params = parameters
         self._is_eval = is_eval
         self.is_val = is_val
@@ -187,8 +185,7 @@ class Tau_Nigens_raw(Dataset):
         self.label_dir = "../Datasets/SELD2020/label_acs"
         self.data_dir = "../Datasets/SELD2020/foa_mic_acs"
         self._augmentation = is_aug
-        self._acs = is_acs
-        self.direct_read = self.params.direct_read
+        self.pre_fetch = self.params.pre_fetch
         self.data_size = 1
         self.nb_classes = 14
 
@@ -197,7 +194,7 @@ class Tau_Nigens_raw(Dataset):
         self.nb_ch = None
         self.get_filenames_list()  # update above parameters
 
-        if self.direct_read == 0:
+        if self.pre_fetch == 1:
             self.data = self.get_all_data(self.filenames_list)
             self.label = self.get_all_label(self.filenames_list)
             print("\tFinal Data frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
@@ -246,7 +243,7 @@ class Tau_Nigens_raw(Dataset):
         return torch.tensor(label, dtype=torch.float)
 
     def __getitem__(self, index):
-        if self.direct_read == 1:
+        if self.pre_fetch == 0:
             file = self.filenames_list[index]
             entry = {"feature": self.get_data(file), "label": self.get_label(file)}
             return entry
@@ -263,7 +260,7 @@ class Tau_Nigens_raw(Dataset):
             if self._is_eval:
                 self.filenames_list.append(filename)
             else:
-                if int(filename[4]) in self._splits and int(filename[-10]) in [0, 1, 2, 3, 4, 5, 6, 7]:  # check which split the file belongs to
+                if int(filename[4]) in self._splits:  # check which split the file belongs to
                     self.filenames_list.append(filename)
 
     def get_nb_classes(self):

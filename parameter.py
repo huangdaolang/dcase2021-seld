@@ -7,15 +7,14 @@ def get_params(output=True):
     parser.add_argument('--quick_test', type=int, default=0)
     parser.add_argument('--mode', type=str, default='dev',
                         help='dev or eval')
-    parser.add_argument('--dataset', type=str, default='foa',
-                        help='foa - ambisonic or mic - microphone signals')
+    parser.add_argument('--dataset', type=str, default='foa')
 
     parser.add_argument('--input', type=str, default='raw',
                         help='determine which input format to use: mel or raw audio')
     parser.add_argument('--model', type=str, default='samplecnn',
                         help='if input==mel, choose resnet or crnn')
     parser.add_argument('--augmentation', type=int, default=1)
-    parser.add_argument('--direct_read', type=int, default=0)
+    parser.add_argument('--pre_fetch', type=int, default=1)
 
     parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
                         help='Base folder containing the foa/mic and metadata folders')
