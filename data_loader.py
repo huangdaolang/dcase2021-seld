@@ -174,66 +174,62 @@ class Tau_Nigens(Dataset):
 
 
 class Tau_Nigens_raw(Dataset):
-    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0):
+    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False):
         self.params = parameters
         self._is_eval = is_eval
-        self.is_val = is_val
+        self._is_val = is_val
         self._splits = np.array(split)
         self._label_seq_len = self.params.label_sequence_length
         self._shuffle = shuffle
         self._feat_cls = feature_class.FeatureClass(params=self.params, is_eval=self._is_eval)
-        self.label_dir = "../Datasets/SELD2020/label_acs"
-        self.data_dir = "../Datasets/SELD2020/foa_mic_acs"
-        self._augmentation = is_aug
-        self.pre_fetch = self.params.pre_fetch
-        self.data_size = 1
+        self.label_dir = "../Datasets/SELD2020/feat_label/foa_dev_label"
+        self.foa_dir = "../Datasets/SELD2020/foa_dev"
+        self.mic_dir = "../Datasets/SELD2020/mic_dev"
         self.nb_classes = 14
 
         self.filenames_list = list()
         self._nb_frames_file = 0
         self.nb_ch = None
         self.get_filenames_list()  # update above parameters
+        self.data_size = 6
 
-        if self.pre_fetch == 1:
-            self.data = self.get_all_data(self.filenames_list)
-            self.label = self.get_all_label(self.filenames_list)
-            print("\tFinal Data frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
-            print("\tFinal Label shape:{}\n".format(self.label.shape))
+        # slice length of label and raw audio
+        self.label_slice_length = 60
+        self.data_slice_length = 144000
+        # interval value
+        self.label_interval = self.label_slice_length if self._is_val else int(self.label_slice_length/self.data_size)
+        self.data_interval = self.data_slice_length if self._is_val else int(self.data_slice_length / self.data_size)
+        # whole iteration number
+        self.iteration = int((600 - self.label_slice_length) / self.label_interval + 1)
+        self.slice_list = self.create_slice_list()
+
+        self.data = self.get_all_data(self.filenames_list)
+        self.label = self.get_all_label(self.filenames_list)
+        print("\tFinal Data frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
+        print("\tFinal Label shape:{}\n".format(self.label.shape))
         self._len_file = len(self.filenames_list)
 
         print(
             '\tfiles number: {}, classes number:{}\n'
             '\tchannels number: {}, label length per sequence: {}\n'.format(
-                len(self.filenames_list),  self.nb_classes, self.nb_ch,
-                self._label_seq_len))
-
-    def get_data(self, file):
-        file = os.path.join(self.data_dir, file)
-        data = np.load(file)
-        return torch.tensor(data, dtype=torch.float)
-
-    def get_label(self, file):
-        file = os.path.join(self.label_dir, file)
-        label = np.load(file)
-
-        # accdoa
-        mask = label[:, :self.nb_classes]
-        mask = np.tile(mask, 3)
-        label = mask * label[:, self.nb_classes:]
-
-        return torch.tensor(label, dtype=torch.float)
+                len(self.filenames_list),  self.nb_classes, self.nb_ch, self._label_seq_len))
 
     def get_all_data(self, filename_list):
         data = []
         for file in filename_list:
-            file = os.path.join(self.data_dir, file)
-            data.append(np.load(file))
+            foa_path = os.path.join(self.foa_dir, file)
+            mic_path = os.path.join(self.mic_dir, file)
+            foa, fs = self._feat_cls.load_audio(foa_path)
+            mic, fs = self._feat_cls.load_audio(mic_path)
+            foa_mic = np.concatenate([mic.numpy().T, foa.numpy().T], axis=0)
+            data.append(foa_mic)
         data = np.array(data)
         return torch.tensor(data, dtype=torch.float)
 
     def get_all_label(self, filename_list):
         label = []
         for file in filename_list:
+            file = file.split('.')[0] + ".npy"
             file = os.path.join(self.label_dir, file)
             label.append(np.load(file))
         label = np.array(label)
@@ -243,25 +239,28 @@ class Tau_Nigens_raw(Dataset):
         return torch.tensor(label, dtype=torch.float)
 
     def __getitem__(self, index):
-        if self.pre_fetch == 0:
-            file = self.filenames_list[index]
-            entry = {"feature": self.get_data(file), "label": self.get_label(file)}
-            return entry
-        else:
-            entry = {"feature": self.data[index], "label": self.label[index]}
-            return entry
+        data_index = index // self.iteration
+        slice_index = index % self.iteration
+        data = self.data[data_index, :, slice_index * self.data_interval: slice_index * self.data_interval + self.data_slice_length]
+        label = self.label[data_index, slice_index * self.label_interval: slice_index * self.label_interval + self.label_slice_length, :]
+        entry = {"feature": data, "label": label}
+        return entry
 
     def __len__(self):
-        return self._len_file
+        return len(self.slice_list)
 
     def get_filenames_list(self):
         self.nb_ch = 8
-        for filename in os.listdir(self.data_dir):
+        for filename in os.listdir(self.foa_dir):
             if self._is_eval:
                 self.filenames_list.append(filename)
             else:
                 if int(filename[4]) in self._splits:  # check which split the file belongs to
                     self.filenames_list.append(filename)
+
+    def create_slice_list(self):
+        slice_list = list(range(0, len(self.filenames_list) * self.iteration))
+        return slice_list
 
     def get_nb_classes(self):
         return self.nb_classes
@@ -272,4 +271,4 @@ class Tau_Nigens_raw(Dataset):
 
 if __name__ == "__main__":
     params = parameter.get_params()
-    dataset = Tau_Nigens_raw(params, split=[3,4,5,6])
+    dataset = Tau_Nigens_raw(params, split=[3, 4, 5, 6])
