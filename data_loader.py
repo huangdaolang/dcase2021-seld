@@ -201,8 +201,8 @@ class Tau_Nigens_raw(Dataset):
         self.data_interval = self.data_slice_length if self._is_val else int(self.data_slice_length / self.data_size)
         # whole iteration number
         self.iteration = int((600 - self.label_slice_length) / self.label_interval + 1)
-        self.slice_list = self.create_slice_list()
 
+        self.slice_list = self.create_slice_list()
         self.data = self.get_all_data(self.filenames_list)
         self.label = self.get_all_label(self.filenames_list)
         print("\tFinal Data frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
@@ -212,16 +212,16 @@ class Tau_Nigens_raw(Dataset):
         print(
             '\tfiles number: {}, classes number:{}\n'
             '\tchannels number: {}, label length per sequence: {}\n'.format(
-                len(self.filenames_list),  self.nb_classes, self.nb_ch, self._label_seq_len))
+                self._len_file,  self.nb_classes, self.nb_ch, self._label_seq_len))
 
     def get_all_data(self, filename_list):
         data = []
         for file in filename_list:
             foa_path = os.path.join(self.foa_dir, file)
             mic_path = os.path.join(self.mic_dir, file)
-            foa, fs = self._feat_cls.load_audio(foa_path)
-            mic, fs = self._feat_cls.load_audio(mic_path)
-            foa_mic = np.concatenate([mic.numpy().T, foa.numpy().T], axis=0)
+            foa, fs = self._feat_cls.load_audio(foa_path)  # foa [1440000 x 4]
+            mic, fs = self._feat_cls.load_audio(mic_path)  # mic [1440000 x 4]
+            foa_mic = np.concatenate([mic.numpy(), foa.numpy()], axis=1)  # foa_mic [1440000 x 8]
             data.append(foa_mic)
         data = np.array(data)
         return torch.tensor(data, dtype=torch.float)
@@ -235,13 +235,13 @@ class Tau_Nigens_raw(Dataset):
         label = np.array(label)
         mask = label[:, :, :self.nb_classes]
         mask = np.tile(mask, 3)
-        label = mask * label[:, :, self.nb_classes:]
-        return torch.tensor(label, dtype=torch.float)
+        label1 = mask * label[:, :, self.nb_classes:]
+        return torch.tensor(label1, dtype=torch.float)
 
     def __getitem__(self, index):
         data_index = index // self.iteration
         slice_index = index % self.iteration
-        data = self.data[data_index, :, slice_index * self.data_interval: slice_index * self.data_interval + self.data_slice_length]
+        data = self.data[data_index, slice_index * self.data_interval: slice_index * self.data_interval + self.data_slice_length, :].T
         label = self.label[data_index, slice_index * self.label_interval: slice_index * self.label_interval + self.label_slice_length, :]
         entry = {"feature": data, "label": label}
         return entry
@@ -271,4 +271,12 @@ class Tau_Nigens_raw(Dataset):
 
 if __name__ == "__main__":
     params = parameter.get_params()
-    dataset = Tau_Nigens_raw(params, split=[3, 4, 5, 6])
+    # a = np.load("../Datasets/SELD2020/feat_label/foa_dev_label/fold1_room1_mix001_ov1.npy")
+    # mask = a[:,:14]
+    # mask = np.tile(mask,3)
+    # b = mask * a[:, 14:]
+    #
+    # for i in range(60):
+    #     print("a",a[i])
+    #     print("b",b[i])
+    dataset = Tau_Nigens_raw(params, split=[2], is_val=True)

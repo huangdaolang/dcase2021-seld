@@ -73,7 +73,7 @@ class Solver(object):
                     PolarityInversion(p=0.5),
 
                     # shift
-                    Shift(min_shift=-10, max_shift=10, shift_unit='samples')
+                    # Shift(min_shift=-200, max_shift=200, shift_unit='samples')
                 ]
             )
 
@@ -120,11 +120,11 @@ class Solver(object):
 
                 # data augmentation
                 if self.augmentation == 1 and self.params.input == "raw":
-                    # p = random.random()
-                    # feature, label = self.swap_channel(feature, label, p)
-                    # feature = feature.to(self.device)
-                    # label = label.to(self.device)
-                    feature = self.apply_augmentation(feature, sample_rate=24000)
+                    p = random.random()
+                    feature, label = self.swap_channel(feature, label, p)
+                    feature = feature.to(self.device)
+                    label = label.to(self.device)
+                    # feature = self.apply_augmentation(feature, sample_rate=24000)
 
                 # mixup
                 if self.mixup == 1:

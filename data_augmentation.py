@@ -188,5 +188,9 @@ if __name__ == "__main__":
     for indicator in range(8):
         audio_channel_swapping(indicator, feat_cls, foa_data, mic_data, filenames_list)
 
+    # filenames_list = ["fold1_room1_mix010_ov1.wav"]
+    # foa_data, mic_data, filenames_list = get_all_raw_data(feat_cls, filenames_list)
+    # audio_channel_swapping(1, feat_cls, foa_data, mic_data, filenames_list)
+
 
 
