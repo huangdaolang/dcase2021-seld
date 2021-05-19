@@ -13,6 +13,7 @@ import utils.utils_functions as utils
 from torch_audiomentations import Compose, Shift, Gain
 from transforms import Swap_Channel
 import random
+import torchaudio
 
 
 class Solver(object):
@@ -74,6 +75,7 @@ class Solver(object):
                     # Shift(min_shift=-200, max_shift=200, shift_unit='samples')
                 ]
             )
+            self.masking = torchaudio.transforms.TimeMasking(100)
 
         # load data
         self.data_val = data_val
@@ -120,6 +122,7 @@ class Solver(object):
                     p = random.random()
                     feature, label = self.swap_channel(feature, label, p)
                     feature = self.apply_augmentation(feature, sample_rate=24000)
+                    feature = self.masking(feature)
 
                 # mixup
                 if self.mixup == 1:
@@ -218,6 +221,9 @@ class Solver(object):
                 self.seld_metric[
                     self.best_epoch, 1] * 100))
 
+        # test set result
+        self.test()
+
         # save model parameters
         model_name = self.unique_name + ".pth"
         torch.save(self.model.state_dict(), os.path.join(self.params.model_dir, model_name))
@@ -266,5 +272,60 @@ class Solver(object):
     def test(self):
         print('\nLoading the best model and predicting results on the testing split')
         print('\tLoading testing dataset:')
+        self.model.eval()
+        sed_out = None
+        doa_out = None
+        sed_label = None
+        doa_label = None
+        for i, data in enumerate(self.test_dataloader):
+            feature = data['feature'].to(self.device)
+            label = data['label'].to(self.device)
 
+            test_pred = self.model(feature)
 
+            sed_out_batch, doa_out_batch = utils.get_accdoa_labels(test_pred.cpu().detach().numpy(), self.nb_classes)
+            sed_label_batch, doa_label_batch = utils.get_accdoa_labels(label.cpu().detach().numpy(), self.nb_classes)
+
+            if i == 0:
+                sed_label = sed_label_batch
+                doa_label = doa_label_batch
+                sed_out = sed_out_batch
+                doa_out = doa_out_batch
+            else:
+                sed_label = np.concatenate((sed_label, sed_label_batch), axis=0)
+                doa_label = np.concatenate((doa_label, doa_label_batch), axis=0)
+                sed_out = np.concatenate((sed_out, sed_out_batch), axis=0)
+                doa_out = np.concatenate((doa_out, doa_out_batch), axis=0)
+
+        sed_pred = SELD_evaluation_metrics.reshape_3Dto2D(sed_out)
+        doa_pred = SELD_evaluation_metrics.reshape_3Dto2D(doa_out)
+        sed_gt = SELD_evaluation_metrics.reshape_3Dto2D(sed_label)
+        doa_gt = SELD_evaluation_metrics.reshape_3Dto2D(doa_label)
+
+        cls_test_metric = SELD_evaluation_metrics.SELDMetrics(nb_classes=self.nb_classes,
+                                                              doa_threshold=self.lad_doa_thresh)
+        test_pred_dict = self.feat_cls.regression_label_format_to_output_format(
+            sed_pred, doa_pred
+        )
+        test_gt_dict = self.feat_cls.regression_label_format_to_output_format(
+            sed_gt, doa_gt
+        )
+
+        test_pred_blocks_dict = self.feat_cls.segment_labels(test_pred_dict, sed_pred.shape[0])
+        test_gt_blocks_dict = self.feat_cls.segment_labels(test_gt_dict, sed_gt.shape[0])
+
+        cls_test_metric.update_seld_scores_xyz(test_pred_blocks_dict, test_gt_blocks_dict)
+        test_seld_metric = cls_test_metric.compute_seld_scores()
+        test_early_stop_metric = SELD_evaluation_metrics.early_stopping_metric(test_seld_metric[:2],
+                                                                               test_seld_metric[2:])
+
+        print('Results on test split:')
+
+        print('\tDCASE2021 Scores')
+        print('\tClass-aware localization scores: DOA Error: {:0.1f}, F-score: {:0.1f}'.format(test_seld_metric[2],
+                                                                                               test_seld_metric[
+                                                                                                   3] * 100))
+        print('\tLocation-aware detection scores: Error rate: {:0.2f}, F-score: {:0.1f}'.format(test_seld_metric[0],
+                                                                                                test_seld_metric[
+                                                                                                    1] * 100))
+        print('\tSELD (early stopping metric): {:0.2f}'.format(test_early_stop_metric))
