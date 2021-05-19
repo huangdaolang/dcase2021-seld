@@ -62,9 +62,10 @@ class ReSE_SampleCNN(nn.Module):
 
         # 144000 x 4
         self.conv1 = nn.Sequential(
-            nn.Conv1d(8, 128, kernel_size=3, stride=3, padding=0),
+            nn.Conv1d(8, 128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(128),
-            nn.ReLU())
+            nn.ReLU(),
+            nn.MaxPool1d(3, stride=3))
 
         self.conv2 = block(128, 128)
         self.conv3 = block(128, 128)
@@ -73,7 +74,7 @@ class ReSE_SampleCNN(nn.Module):
         self.conv6 = block(256, 256)
         self.conv7 = block(256, 128)
 
-        self.avgpool = nn.AdaptiveAvgPool1d(60)
+        self.avgpool = nn.AdaptiveMaxPool1d(60)
 
         self.conformer1 = nn.Sequential(
             ConformerBlock(dim=128, dim_head=64)
