@@ -118,17 +118,7 @@ class FeatureClass:
                                                             n_mels=self._nb_mel_bins)(audio_input[:, ch_cnt])[:, :self._max_feat_frames].T
             mel_feat[:, :, ch_cnt] = mel_spec
         mel_feat = mel_feat.reshape((self._max_feat_frames, self._nb_mel_bins * _nb_ch))
-        # linear_spectra = torch.from_numpy(linear_spectra)
-        #
-        # print(type(linear_spectra[0,0,0]))
-        # _nb_ch = linear_spectra.shape[-1]
-        # mel_feat = np.zeros((self._max_feat_frames, self._nb_mel_bins, _nb_ch))
-        # for ch_cnt in range(_nb_ch):
-        #     mel_spec = torchaudio.transforms.MelScale(n_mels=self._nb_mel_bins,
-        #                                               sample_rate=self._fs)(linear_spectra[:, :, ch_cnt])
-        #     print(mel_spec.shape)
-        #     mel_feat[:, :, ch_cnt] = mel_spec
-        # print(mel_feat.shape)
+
         return mel_feat
 
     def _get_foa_intensity_vectors(self, linear_spectra):

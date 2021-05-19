@@ -5,31 +5,29 @@ import os
 import feature_class
 import random
 import torch
-import data_augmentation as aug
 
 
 class Tau_Nigens(Dataset):
     """ data output format:
         mel: n_samples x channels x frame sequence length x n_mel (4000 x 7 x 300 x 64)
         raw: n_samples x channels x samples (4000 x 4 x 144000)
-        label output format: n_samples x label_sequence_length x 3*classes (4000 x 60 x 42)
+        label output format: n_samples x label_sequence_length x 3*classes (4000 x 60 x 36)
     """
-    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False, is_aug=0):
+    def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False):
         self.params = parameters
         self._input = self.params.input
         self._is_eval = is_eval
-        self.is_val = is_val
+        self._is_val = is_val
         self._splits = np.array(split)
         self._feature_seq_len = self.params.feature_sequence_length
         self._label_seq_len = self.params.label_sequence_length
         self._shuffle = shuffle
         self._feat_cls = feature_class.FeatureClass(params=self.params, is_eval=self._is_eval)
+
         self._label_dir = self._feat_cls.get_label_dir()
         self._feat_dir = self._feat_cls.get_normalized_feat_dir()
         self._foa_dir = self._feat_cls.get_raw_dir()
-        self._augmentation = is_aug
-
-        self.data_size = 6
+        self._overlap_size = 1
         self._nb_mel_bins = self._feat_cls.get_nb_mel_bins()
         self._nb_classes = self._feat_cls.get_nb_classes()
 
@@ -68,7 +66,7 @@ class Tau_Nigens(Dataset):
         for file in self._filenames_list:
             features_per_file = np.load(os.path.join(self._feat_dir, file))  # 3000*448 (448 is mel * channel)
             sequence_length = int(len(features_per_file) // 10)
-            interval = sequence_length if self.is_val else int(sequence_length/self.data_size)
+            interval = sequence_length if self._is_val else int(sequence_length/self._overlap_size)
             iteration = int((3000 - sequence_length) / interval + 1)
             for i in range(iteration):
                 data_seg = features_per_file[i*interval:i*interval+sequence_length]
@@ -84,11 +82,11 @@ class Tau_Nigens(Dataset):
         print("\tstart to get fetch raw audio data")
         data = []
         sequence_length = 144000
-        interval = sequence_length if self.is_val else int(sequence_length/self.data_size)
+        interval = sequence_length if self._is_val else int(sequence_length/self._overlap_size)
         iteration = int((1440000 - sequence_length) / interval + 1)
         for file in self._filenames_list:
             foa_path = os.path.join(self._foa_dir, file)
-            mic_path = os.path.join("../Datasets/SELD2020/mic_dev", file)
+            mic_path = os.path.join("../Datasets/SELD2021/mic_dev", file)
             foa, fs = self._feat_cls.load_audio(foa_path)
             mic, fs = self._feat_cls.load_audio(mic_path)
             for i in range(iteration):
@@ -105,7 +103,7 @@ class Tau_Nigens(Dataset):
         label = []
         # if is validation or test, do not contain overlap data
         sequence_length = 60
-        interval = sequence_length if self.is_val else int(sequence_length/self.data_size)
+        interval = sequence_length if self._is_val else int(sequence_length/self._overlap_size)
         iteration = int((600 - sequence_length) / interval + 1)
         for file in self._filenames_list:
             if self._input == "raw":
@@ -124,16 +122,6 @@ class Tau_Nigens(Dataset):
         print("\tLabel shape:{}\n".format(label.shape))
 
         return torch.tensor(label, dtype=torch.float)
-
-    def spec_augmentation(self):
-        print("start mel-spectrogram spec-augmentation")
-        for i, data in enumerate(self.data):
-            aug_freq_data = aug.freq_mask(data).unsqueeze(0)
-            self.data = torch.cat((self.data, aug_freq_data), 0)
-            self.label = torch.cat((self.label, self.label[i].unsqueeze(0)), 0)
-            aug_time_data = aug.time_mask(data).unsqueeze(0)
-            self.data = torch.cat((self.data, aug_time_data), 0)
-            self.label = torch.cat((self.label, self.label[i].unsqueeze(0)), 0)
 
     def __getitem__(self, index):
         entry = {"feature": self.data[index], "label": self.label[index]}
@@ -182,31 +170,31 @@ class Tau_Nigens_raw(Dataset):
         self._label_seq_len = self.params.label_sequence_length
         self._shuffle = shuffle
         self._feat_cls = feature_class.FeatureClass(params=self.params, is_eval=self._is_eval)
-        self.label_dir = "../Datasets/SELD2020/feat_label/foa_dev_label"
-        self.foa_dir = "../Datasets/SELD2020/foa_dev"
-        self.mic_dir = "../Datasets/SELD2020/mic_dev"
-        self.nb_classes = 14
+        self.label_dir = "../Datasets/SELD2021/feat_label/foa_dev_label"
+        self.foa_dir = "../Datasets/SELD2021/foa_dev"
+        self.mic_dir = "../Datasets/SELD2021/mic_dev"
+        self.nb_classes = self._feat_cls.get_nb_classes()
 
         self.filenames_list = list()
         self._nb_frames_file = 0
         self.nb_ch = None
         self.get_filenames_list()  # update above parameters
-        self.data_size = 6
+        self._overlap_size = 6
 
         # slice length of label and raw audio
         self.label_slice_length = 60
         self.data_slice_length = 144000
         # interval value
-        self.label_interval = self.label_slice_length if self._is_val else int(self.label_slice_length/self.data_size)
-        self.data_interval = self.data_slice_length if self._is_val else int(self.data_slice_length / self.data_size)
+        self.label_interval = self.label_slice_length if self._is_val else int(self.label_slice_length/self._overlap_size)
+        self.data_interval = self.data_slice_length if self._is_val else int(self.data_slice_length / self._overlap_size)
         # whole iteration number
         self.iteration = int((600 - self.label_slice_length) / self.label_interval + 1)
 
         self.slice_list = self.create_slice_list()
         self.data = self.get_all_data(self.filenames_list)
         self.label = self.get_all_label(self.filenames_list)
-        print("\tFinal Data frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
-        print("\tFinal Label shape:{}\n".format(self.label.shape))
+        print("\tData frames shape: [n_samples, channel, audio_samples]:{}\n".format(self.data.shape))
+        print("\tLabel shape:{}\n".format(self.label.shape))
         self._len_file = len(self.filenames_list)
 
         print(
@@ -271,12 +259,4 @@ class Tau_Nigens_raw(Dataset):
 
 if __name__ == "__main__":
     params = parameter.get_params()
-    # a = np.load("../Datasets/SELD2020/feat_label/foa_dev_label/fold1_room1_mix001_ov1.npy")
-    # mask = a[:,:14]
-    # mask = np.tile(mask,3)
-    # b = mask * a[:, 14:]
-    #
-    # for i in range(60):
-    #     print("a",a[i])
-    #     print("b",b[i])
     dataset = Tau_Nigens_raw(params, split=[2], is_val=True)

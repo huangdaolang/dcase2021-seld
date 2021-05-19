@@ -75,7 +75,7 @@ class CRNN(nn.Module):
         )
         self.doa = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 42), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(128, 36), batch_first=True),
             nn.Tanh()
         )
 
@@ -88,16 +88,13 @@ class CRNN(nn.Module):
         out = torch.reshape(out, (out.shape[0], 60, -1))
 
         out = self.conformer1(out)
-        out = self.conformer2(out)
-        out = self.conformer3(out)
-        out = self.conformer4(out)
-        out = self.conformer5(out)
-        out = self.conformer6(out)
-        out = self.conformer7(out)
-        out = self.conformer8(out)
-        # print(out.shape)
-        # out, h = self.rnn1(out)
-        # out, h = self.rnn2(out)
+        # out = self.conformer2(out)
+        # out = self.conformer3(out)
+        # out = self.conformer4(out)
+        # out = self.conformer5(out)
+        # out = self.conformer6(out)
+        # out = self.conformer7(out)
+        # out = self.conformer8(out)
 
         out = self.doa(out)
 

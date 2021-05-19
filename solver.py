@@ -6,11 +6,11 @@ from torchsummary import summary
 import numpy as np
 import time
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CyclicLR, StepLR
-from metrics import evaluation_metrics, SELD_evaluation_metrics
+from metrics import SELD_evaluation_metrics
 from torch.utils.tensorboard import SummaryWriter
 import os
 import utils.utils_functions as utils
-from torch_audiomentations import Compose, Shift, PolarityInversion, Gain
+from torch_audiomentations import Compose, Shift, Gain
 from transforms import Swap_Channel
 import random
 
@@ -65,14 +65,12 @@ class Solver(object):
         if self.augmentation == 1:
             self.apply_augmentation = Compose(
                 transforms=[
-                    # Gain(
-                    #     min_gain_in_db=-5.0,
-                    #     max_gain_in_db=5.0,
-                    #     p=0.5,
-                    # ),
-                    PolarityInversion(p=0.5),
+                    Gain(
+                        min_gain_in_db=-2.0,
+                        max_gain_in_db=20.0,
+                        p=0.5,
+                    ),
 
-                    # shift
                     # Shift(min_shift=-200, max_shift=200, shift_unit='samples')
                 ]
             )
@@ -81,9 +79,8 @@ class Solver(object):
         self.data_val = data_val
         self.data_train = data_train
         self.data_test = data_test
+        self.train_dataloader = DataLoader(self.data_train, batch_size=params.batch_size, shuffle=True, drop_last=True)
         self.val_dataloader = DataLoader(self.data_val, batch_size=params.batch_size, shuffle=True, drop_last=True)
-        self.train_dataloader = DataLoader(self.data_train, batch_size=params.batch_size, shuffle=True,
-                                           drop_last=True)
         self.test_dataloader = DataLoader(self.data_test, batch_size=params.batch_size, shuffle=False, drop_last=False)
 
         self.nb_classes = self.data_train.get_nb_classes()
@@ -122,9 +119,7 @@ class Solver(object):
                 if self.augmentation == 1 and self.params.input == "raw":
                     p = random.random()
                     feature, label = self.swap_channel(feature, label, p)
-                    feature = feature.to(self.device)
-                    label = label.to(self.device)
-                    # feature = self.apply_augmentation(feature, sample_rate=24000)
+                    feature = self.apply_augmentation(feature, sample_rate=24000)
 
                 # mixup
                 if self.mixup == 1:
@@ -153,10 +148,10 @@ class Solver(object):
             else:
                 self.scheduler.step()
 
-            sed_pred = evaluation_metrics.reshape_3Dto2D(sed_out)
-            doa_pred = evaluation_metrics.reshape_3Dto2D(doa_out)
-            sed_gt = evaluation_metrics.reshape_3Dto2D(sed_label)
-            doa_gt = evaluation_metrics.reshape_3Dto2D(doa_label)
+            sed_pred = SELD_evaluation_metrics.reshape_3Dto2D(sed_out)
+            doa_pred = SELD_evaluation_metrics.reshape_3Dto2D(doa_out)
+            sed_gt = SELD_evaluation_metrics.reshape_3Dto2D(sed_label)
+            doa_gt = SELD_evaluation_metrics.reshape_3Dto2D(doa_label)
 
             # Calculate the DCASE 2020 metrics - Location-aware detection and Class-aware localization scores
             cls_metric = SELD_evaluation_metrics.SELDMetrics(nb_classes=self.nb_classes,
@@ -173,7 +168,7 @@ class Solver(object):
 
             cls_metric.update_seld_scores_xyz(pred_blocks_dict, gt_blocks_dict)
             self.seld_metric[epoch_cnt, :] = cls_metric.compute_seld_scores()
-            self.early_stop_metric[epoch_cnt] = evaluation_metrics.early_stopping_metric(self.seld_metric[epoch_cnt, :2],
+            self.early_stop_metric[epoch_cnt] = SELD_evaluation_metrics.early_stopping_metric(self.seld_metric[epoch_cnt, :2],
                                                                                          self.seld_metric[epoch_cnt, 2:])
 
             self.patience_cnt += 1
@@ -185,7 +180,7 @@ class Solver(object):
 
             print(
                 'epoch_cnt: {}, time: {:0.2f}s, tr_loss: {:0.2f}, '
-                '\n\t\t DCASE2020 SCORES: SED_Error: {:0.2f}, SED_F: {:0.1f}, DOA_Error: {:0.1f}, DOA_recall:{:0.1f}, '
+                '\n\t\t DCASE2021 SCORES: SED_Error: {:0.2f}, SED_F: {:0.1f}, DOA_Error: {:0.1f}, DOA_recall:{:0.1f}, '
                 'seld_score (early stopping score): {:0.2f}, '
                 'best_seld_score: {:0.2f}, best_epoch : {}\n'.format(
                     epoch_cnt, time.time() - start, self.tr_loss[epoch_cnt],

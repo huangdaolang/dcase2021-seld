@@ -16,12 +16,12 @@ def main():
 
     if params.mode == 'dev':
         # dcase 2021 split
-        # test_splits = [6]
-        # val_splits = [5]
-        # train_splits = [[1, 2, 3, 4]]
-        test_splits = [1]
-        val_splits = [2]
-        train_splits = [[3, 4, 5, 6]]
+        test_splits = [6]
+        val_splits = [5]
+        train_splits = [[1, 2, 3, 4]]
+        # test_splits = [1]
+        # val_splits = [2]
+        # train_splits = [[3, 4, 5, 6]]
 
     elif params.mode == 'eval':
         test_splits = [[7, 8]]
@@ -32,26 +32,41 @@ def main():
         utils.create_folder(params.model_dir)
 
         # Unique name for the run
-        unique_name = '{}_{}_{}_{}'.format(
-            datetime.datetime.today().strftime('%m%d%H%M'), params.model, params.dataset, params.mode
+        unique_name = '{}_{}'.format(
+            datetime.datetime.today().strftime('%m%d%H%M'), params.model
         )
         print("unique_name: {}\n".format(unique_name))
 
         # Load train, validation and test data
         print('Loading training dataset:')
-        data_train = data_loader.Tau_Nigens_raw(
-            parameters=params, split=train_splits[split_cnt], is_val=False
-        )
+        if params.input == 'raw':
+            data_train = data_loader.Tau_Nigens_raw(
+                parameters=params, split=train_splits[split_cnt], is_val=False
+            )
 
-        print('Loading validation dataset:')
-        data_val = data_loader.Tau_Nigens_raw(
-            parameters=params, split=val_splits[split_cnt], is_val=True
-        )
+            print('Loading validation dataset:')
+            data_val = data_loader.Tau_Nigens_raw(
+                parameters=params, split=val_splits[split_cnt], is_val=True
+            )
 
-        print('Loading test dataset:')
-        data_test = data_loader.Tau_Nigens_raw(
-            parameters=params, split=test_splits[split_cnt], shuffle=False, is_val=True
-        )
+            print('Loading test dataset:')
+            data_test = data_loader.Tau_Nigens_raw(
+                parameters=params, split=test_splits[split_cnt], shuffle=False, is_val=True
+            )
+        else:
+            data_train = data_loader.Tau_Nigens(
+                parameters=params, split=train_splits[split_cnt], is_val=False
+            )
+
+            print('Loading validation dataset:')
+            data_val = data_loader.Tau_Nigens(
+                parameters=params, split=val_splits[split_cnt], is_val=True
+            )
+
+            print('Loading test dataset:')
+            data_test = data_loader.Tau_Nigens(
+                parameters=params, split=test_splits[split_cnt], shuffle=False, is_val=True
+            )
 
         # create solver and run
         my_solver = solver.Solver(data_train, data_val, data_test, feat_cls, params, unique_name)

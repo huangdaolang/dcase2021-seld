@@ -69,8 +69,8 @@ class ReSE_SampleCNN(nn.Module):
         self.conv2 = block(128, 128)
         self.conv3 = block(128, 128)
         self.conv4 = block(128, 256)
-        self.conv5 = block(256, 512)
-        self.conv6 = block(512, 256)
+        self.conv5 = block(256, 256)
+        self.conv6 = block(256, 256)
         self.conv7 = block(256, 128)
 
         self.avgpool = nn.AdaptiveAvgPool1d(60)
@@ -85,7 +85,7 @@ class ReSE_SampleCNN(nn.Module):
         self.doa = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 42), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(128, 36), batch_first=True),
             nn.Tanh()
         )
 

@@ -55,15 +55,6 @@ class SampleCNN(nn.Module):
 
         # output: 65 x 128
         self.avgpool = nn.AdaptiveAvgPool1d(60)
-        # self.rnn1 = nn.Sequential(
-        #     nn.GRU(input_size=128, bidirectional=True, hidden_size=128,
-        #            batch_first=True)
-        # )
-        #
-        # self.rnn2 = nn.Sequential(
-        #     nn.GRU(input_size=256, bidirectional=True, hidden_size=128,
-        #            batch_first=True)
-        # )
 
         self.conformer1 = nn.Sequential(
             ConformerBlock(dim=128, dim_head=64)
@@ -74,7 +65,7 @@ class SampleCNN(nn.Module):
         self.doa = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
             nn.Dropout(self.params.dropout_rate),
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 42), batch_first=True),
+            models.Time_distributed.TimeDistributed(nn.Linear(128, 36), batch_first=True),
             nn.Tanh()
         )
 

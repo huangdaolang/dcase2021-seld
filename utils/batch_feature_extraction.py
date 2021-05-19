@@ -1,9 +1,8 @@
 # Extracts the features, labels, and normalizes the development and evaluation split features.
 
-import raw_feature_class
 import feature_class
 import parameter
-
+import os
 
 process_str = 'dev, eval'   # 'dev' or 'eval' will extract features for the respective set accordingly
                             #  'dev, eval' will extract features of both sets together
@@ -32,6 +31,10 @@ def get_all_features(params):
         eval_feat_cls.preprocess_features()
 
 
+print(os.listdir(""))
+for file_cnt, file_name in enumerate(os.listdir("../../Datasets/SELD2020/foa_dev")):
+    print('{}: {}'.format(file_cnt, file_name))
+get_all_features(params)
 
 
 

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import parameter
 import os
-import cls_feature_class
+import feature_class
 import numpy as np
 import librosa
 import librosa.display
@@ -13,7 +13,7 @@ params = parameter.get_params()
 aud_dir = os.path.join(params.dataset_dir, 'foa_dev')
 filename = '../../Datasets/SELD2021/foa_dev/fold1_room1_mix003.wav'
 
-feat_cls = cls_feature_class.FeatureClass(params)
+feat_cls = feature_class.FeatureClass(params)
 audio, fs = feat_cls.load_audio(filename)
 stft = np.abs(np.squeeze(feat_cls.spectrogram(audio[:, :1])))
 stft = librosa.amplitude_to_db(stft, ref=np.max)

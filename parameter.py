@@ -9,15 +9,15 @@ def get_params(output=True):
                         help='dev or eval')
     parser.add_argument('--dataset', type=str, default='foa')
 
-    parser.add_argument('--input', type=str, default='raw',
+    parser.add_argument('--input', type=str, default='mel',
                         help='determine which input format to use: mel or raw audio')
-    parser.add_argument('--model', type=str, default='samplecnn',
+    parser.add_argument('--model', type=str, default='crnn',
                         help='if input==mel, choose resnet or crnn')
     parser.add_argument('--augmentation', type=int, default=1)
 
-    parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2020/',
+    parser.add_argument('--dataset_dir', type=str, default='../Datasets/SELD2021',
                         help='Base folder containing the foa/mic and metadata folders')
-    parser.add_argument('--feat_label_dir', type=str, default='../Datasets/SELD2020/feat_label/',
+    parser.add_argument('--feat_label_dir', type=str, default='../Datasets/SELD2021/feat_label/',
                         help='Directory to dump extracted features and labels')
     parser.add_argument('--model_dir', type=str, default='trained_model/',
                         help='Dumps the trained models and training curves in this folder')
@@ -46,8 +46,6 @@ def get_params(output=True):
     parser.add_argument('--lad_doa_thresh', type=int, default=20)
     parser.add_argument('--label_sequence_length', type=int, default=60,
                         help='label length for one piece of data')
-    parser.add_argument('--data_in', type=tuple, default=(7, 300, 64))
-    parser.add_argument('--data_out', type=list, default=[(60, 14), (60, 42)])
 
     params = parser.parse_args()
     feature_label_resolution = int(params.label_hop_len_s // params.hop_len_s)
@@ -59,16 +57,14 @@ def get_params(output=True):
         'baby': 1,
         'crash': 2,
         'dog': 3,
-        'engine': 4,
-        'female_scream': 5,
-        'female_speech': 6,
-        'fire': 7,
-        'footsteps': 8,
-        'knock': 9,
-        'male_scream': 10,
-        'male_speech': 11,
-        'phone': 12,
-        'piano': 13
+        'female_scream': 4,
+        'female_speech': 5,
+        'footsteps': 6,
+        'knock': 7,
+        'male_scream': 8,
+        'male_speech': 9,
+        'phone': 10,
+        'piano': 11
     }
     if output:
         for key, value in params.__dict__.items():

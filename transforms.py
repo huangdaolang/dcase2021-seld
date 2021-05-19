@@ -11,9 +11,9 @@ class Swap_Channel(object):
         self.p = None
 
     def __call__(self, data, label, p):
-        x = label[:, :, :14]
-        y = label[:, :, 14:28]
-        z = label[:, :, 28:]
+        x = label[:, :, :12]
+        y = label[:, :, 12:24]
+        z = label[:, :, 24:]
         new_label = None
         new_data = None
         if 0 <= p < 0.125:
@@ -68,7 +68,7 @@ class Swap_Channel(object):
             new_y = y
             new_z = -z
             new_label = torch.cat([new_x, new_y, new_z], dim=2)
-        return new_data, new_label
+        return new_data.to(data.device), new_label.to(label.device)
 
 
 if __name__ == "__main__":
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     ])
 
     swap_channel = Swap_Channel()
-    tmp_label_1 = np.load("../Datasets/SELD2020/feat_label/foa_dev_label/fold1_room1_mix010_ov1.npy")[:10, 14:]
-    tmp_label_2 = np.load("../Datasets/SELD2020/feat_label/foa_dev_label/fold1_room1_mix012_ov1.npy")[184:194, 14:]
+    tmp_label_1 = np.load("../Datasets/SELD2020/feat_label/foa_dev_label/fold1_room1_mix010_ov1.npy")[:10, 12:]
+    tmp_label_2 = np.load("../Datasets/SELD2020/feat_label/foa_dev_label/fold1_room1_mix012_ov1.npy")[184:194, 12:]
     tmp_label = np.stack([tmp_label_1, tmp_label_2], axis=0)
 
     data, label = swap_channel(data, torch.tensor(tmp_label), 0.3)
