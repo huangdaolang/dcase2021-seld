@@ -17,15 +17,15 @@ def main():
     if params.mode == 'dev':
         # dcase 2021 split
         test_splits = [6]
-        val_splits = [5]
-        train_splits = [[1, 2, 3, 4]]
+        val_splits = [6]
+        train_splits = [[1, 2, 3, 4, 5]]
         # test_splits = [1]
         # val_splits = [2]
         # train_splits = [[3, 4, 5, 6]]
 
     elif params.mode == 'eval':
         test_splits = [[7, 8]]
-        val_splits = [[6]]
+        val_splits = [6]
         train_splits = [[1, 2, 3, 4, 5]]
 
     for split_cnt, split in enumerate(test_splits):

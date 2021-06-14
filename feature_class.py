@@ -326,7 +326,8 @@ class FeatureClass:
         for _frame_ind in _output_format_dict.keys():
             for _value in _output_format_dict[_frame_ind]:
                 # Write Cartesian format output. Since baseline does not estimate track count we use a fixed value.
-                _fid.write('{},{},{},{},{},{}\n'.format(int(_frame_ind), int(_value[0]), 0, float(_value[1]), float(_value[2]), float(_value[3])))
+                # _fid.write('{},{},{},{},{},{}\n'.format(int(_frame_ind), int(_value[0]), 0, float(_value[1]), float(_value[2]), float(_value[3])))
+                _fid.write('{},{},{},{}\n'.format(int(_frame_ind), int(_value[0]), float(_value[1]), float(_value[2])))
         _fid.close()
 
     def segment_labels(self, _pred_dict, _max_frames):
@@ -494,3 +495,14 @@ if __name__ == "__main__":
     params = parameter.get_params()
     feature_class = FeatureClass(params)
     print(feature_class)
+    file = "../Datasets/SELD2021/foa_dev/fold1_room1_mix001.wav"
+    data = torch.tensor([
+        [[1, 1, 1], [1, 1, 2], [2, 2, 3], [3, 3, 4], [4, 4, 5], [5, 5, 6], [6, 6, 7], [7, 7, 8]],
+        [[1, 1, 1], [2, 2, 1], [3, 3, 1], [30, 30, 1], [4, 4, 1], [5, 5, 1], [6, 6, 1], [7, 7, 1]],
+        [[1, 1, 1], [1, 1, 1], [2, 2, 1], [3, 3, 1], [4, 4, 1], [5, 5, 1], [6, 6, 1], [7, 7, 1]]
+    ])
+    audio, fs = feature_class.load_audio(file)
+    audio = audio.T
+    mask = torchaudio.transforms.TimeMasking(2)
+    print(mask(data).shape)
+    print(data)

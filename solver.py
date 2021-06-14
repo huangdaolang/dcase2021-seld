@@ -58,7 +58,7 @@ class Solver(object):
 
         # mixup setup
         self.mixup = self.params.mixup
-        self.alpha = 1.
+        self.alpha = 0.1  # change
 
         # augmentation setup
         self.augmentation = self.params.augmentation
@@ -68,7 +68,7 @@ class Solver(object):
                 transforms=[
                     Gain(
                         min_gain_in_db=-2.0,
-                        max_gain_in_db=20.0,
+                        max_gain_in_db=12.0,
                         p=0.5,
                     ),
 
@@ -121,7 +121,7 @@ class Solver(object):
                 if self.augmentation == 1 and self.params.input == "raw":
                     p = random.random()
                     feature, label = self.swap_channel(feature, label, p)
-                    feature = self.apply_augmentation(feature, sample_rate=24000)
+                    # feature = self.apply_augmentation(feature, sample_rate=24000)
                     feature = self.masking(feature)
 
                 # mixup
@@ -180,6 +180,10 @@ class Solver(object):
                 self.best_epoch = epoch_cnt
                 # model.save(model_name)
                 self.patience_cnt = 0
+                # save model parameters
+                print("save latest model parameters!")
+                model_name = self.unique_name + ".pth"
+                torch.save(self.model.state_dict(), os.path.join(self.params.model_dir, model_name))
 
             print(
                 'epoch_cnt: {}, time: {:0.2f}s, tr_loss: {:0.2f}, '
@@ -224,9 +228,7 @@ class Solver(object):
         # test set result
         self.test()
 
-        # save model parameters
-        model_name = self.unique_name + ".pth"
-        torch.save(self.model.state_dict(), os.path.join(self.params.model_dir, model_name))
+
 
         # TODO add test set
         np.save('results/sed_pred.npy', sed_pred)

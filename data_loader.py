@@ -5,6 +5,7 @@ import os
 import feature_class
 import random
 import torch
+import utils.utils_functions as utils
 
 
 class Tau_Nigens(Dataset):
@@ -163,13 +164,14 @@ class Tau_Nigens(Dataset):
 
 class Tau_Nigens_raw(Dataset):
     def __init__(self, parameters, split, shuffle=True, is_eval=False, is_val=False):
-        self.params = parameters
+        self._params = parameters
         self._is_eval = is_eval
         self._is_val = is_val
         self._splits = np.array(split)
-        self._label_seq_len = self.params.label_sequence_length
+        self._label_seq_len = self._params.label_sequence_length
         self._shuffle = shuffle
-        self._feat_cls = feature_class.FeatureClass(params=self.params, is_eval=self._is_eval)
+        self._feat_cls = feature_class.FeatureClass(params=self._params, is_eval=self._is_eval)
+
         self.label_dir = "../Datasets/SELD2021/feat_label/foa_dev_label"
         self.foa_dir = "../Datasets/SELD2021/foa_dev"
         self.mic_dir = "../Datasets/SELD2021/mic_dev"
@@ -189,6 +191,8 @@ class Tau_Nigens_raw(Dataset):
         self.data_interval = self.data_slice_length if self._is_val else int(self.data_slice_length / self._overlap_size)
         # whole iteration number
         self.iteration = int((600 - self.label_slice_length) / self.label_interval + 1)
+
+        self._filter = utils.FilterByOctaves(fs=24000, backend='scipy')
 
         self.slice_list = self.create_slice_list()
         self.data = self.get_all_data(self.filenames_list)
@@ -231,6 +235,13 @@ class Tau_Nigens_raw(Dataset):
         slice_index = index % self.iteration
         data = self.data[data_index, slice_index * self.data_interval: slice_index * self.data_interval + self.data_slice_length, :].T
         label = self.label[data_index, slice_index * self.label_interval: slice_index * self.label_interval + self.label_slice_length, :]
+
+        # apply filter
+        # if self._params.augmentation == 1 and self._is_val is True:
+        #     p = random.random()
+        #     if p > 0.5:
+        #         data = self._filter.forward(data)
+        #         data = data.float()
         entry = {"feature": data, "label": label}
         return entry
 

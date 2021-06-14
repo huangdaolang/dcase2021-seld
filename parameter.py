@@ -9,9 +9,9 @@ def get_params(output=True):
                         help='dev or eval')
     parser.add_argument('--dataset', type=str, default='foa')
 
-    parser.add_argument('--input', type=str, default='mel',
+    parser.add_argument('--input', type=str, default='raw',
                         help='determine which input format to use: mel or raw audio')
-    parser.add_argument('--model', type=str, default='crnn',
+    parser.add_argument('--model', type=str, default='samplecnn',
                         help='if input==mel, choose resnet or crnn')
     parser.add_argument('--augmentation', type=int, default=1)
 
@@ -50,7 +50,7 @@ def get_params(output=True):
     params = parser.parse_args()
     feature_label_resolution = int(params.label_hop_len_s // params.hop_len_s)
     params.feature_sequence_length = params.label_sequence_length * feature_label_resolution
-    params.patience = int(params.nb_epochs)  # Stop training if patience is reached
+    params.patience = 30  # Stop training if patience is reached
 
     params.unique_classes = {
         'alarm': 0,

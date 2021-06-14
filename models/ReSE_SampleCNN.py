@@ -85,9 +85,10 @@ class ReSE_SampleCNN(nn.Module):
 
         self.doa = nn.Sequential(
             models.Time_distributed.TimeDistributed(nn.Linear(128, 128), batch_first=True),
-            nn.Dropout(self.params.dropout_rate),
-            models.Time_distributed.TimeDistributed(nn.Linear(128, 36), batch_first=True),
-            nn.Tanh()
+            models.Time_distributed.TimeDistributed(nn.Linear(128, 256), batch_first=True),
+            # nn.Dropout(self.params.dropout_rate),
+            models.Time_distributed.TimeDistributed(nn.Linear(256, 36), batch_first=True),
+            # nn.Tanh()
         )
 
     def forward(self, x):
